@@ -1,0 +1,107 @@
+// ============================================================
+// SocketManager — Singleton wrapper around socket.io-client
+// All network communication goes through here
+// ============================================================
+
+import { io } from 'socket.io-client';
+import { CONFIG } from '../config.js';
+
+class SocketManagerClass {
+  constructor() {
+    this.socket = null;
+    this.roomCode = null;
+    this.team = null;
+    this.playerName = null;
+  }
+
+  connect() {
+    if (this.socket && this.socket.connected) return;
+    this.socket = io(CONFIG.SERVER_URL, {
+      transports: ['websocket', 'polling']
+    });
+
+    this.socket.on('connect', () => {
+      console.log('🔌 Connected to BattleBrains server');
+    });
+
+    this.socket.on('disconnect', () => {
+      console.log('💔 Disconnected from server');
+    });
+  }
+
+  // ── Room Operations ──
+
+  createRoom(playerName, mode) {
+    return new Promise((resolve, reject) => {
+      this.playerName = playerName;
+      this.socket.emit('create-room', { playerName, mode }, (response) => {
+        if (response.success) {
+          this.roomCode = response.roomCode;
+          this.team = response.team;
+          resolve(response);
+        } else {
+          reject(response.error);
+        }
+      });
+    });
+  }
+
+  joinRoom(roomCode, playerName) {
+    return new Promise((resolve, reject) => {
+      this.playerName = playerName;
+      this.socket.emit('join-room', { roomCode, playerName }, (response) => {
+        if (response.success) {
+          this.roomCode = response.roomCode;
+          this.team = response.team;
+          resolve(response);
+        } else {
+          reject(response.error);
+        }
+      });
+    });
+  }
+
+  switchTeam() {
+    this.socket.emit('switch-team', { roomCode: this.roomCode });
+  }
+
+  startGame() {
+    this.socket.emit('start-game', { roomCode: this.roomCode });
+  }
+
+  submitAnswer(answerIndex) {
+    this.socket.emit('submit-answer', { roomCode: this.roomCode, answerIndex });
+  }
+
+  usePowerUp(type) {
+    this.socket.emit('use-powerup', { roomCode: this.roomCode, powerUpType: type });
+  }
+
+  requestNextQuestion() {
+    this.socket.emit('next-question', { roomCode: this.roomCode });
+  }
+
+  rematch() {
+    this.socket.emit('rematch', { roomCode: this.roomCode });
+  }
+
+  // ── Event Listeners ──
+
+  on(event, callback) {
+    if (this.socket) this.socket.on(event, callback);
+  }
+
+  off(event, callback) {
+    if (this.socket) this.socket.off(event, callback);
+  }
+
+  destroy() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+  }
+}
+
+// Singleton
+export const SocketManager = new SocketManagerClass();

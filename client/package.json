@@ -1,0 +1,17 @@
+{
+  "name": "battlebrains-client",
+  "version": "1.0.0",
+  "description": "BattleBrains Phaser 3 game client",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "phaser": "^3.80.1",
+    "socket.io-client": "^4.7.4"
+  },
+  "devDependencies": {
+    "vite": "^5.1.0"
+  }
+}

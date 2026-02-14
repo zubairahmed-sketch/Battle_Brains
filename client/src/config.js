@@ -21,6 +21,27 @@ export const CONFIG = {
     return scene?.scale?.height || scene?.cameras?.main?.height || 720;
   },
 
+  // ── Responsive scaling helpers ──
+  // Returns a scale factor relative to the 1280x720 design size.
+  // On 360px wide phone: sx ≈ 0.28, on 768px tablet: sx ≈ 0.6
+  sx(scene) {
+    return (scene?.scale?.width || 1280) / 1280;
+  },
+  sy(scene) {
+    return (scene?.scale?.height || 720) / 720;
+  },
+  // Uniform scale = min(sx, sy) — keeps aspect ratio, prevents overflow
+  s(scene) {
+    const w = scene?.scale?.width || 1280;
+    const h = scene?.scale?.height || 720;
+    return Math.min(w / 1280, h / 720);
+  },
+  // Scaled font size string, e.g. CONFIG.fs(scene, 28) → "14px" on a 640px-wide phone
+  fs(scene, designPx) {
+    const scale = Math.min((scene?.scale?.width || 1280) / 1280, (scene?.scale?.height || 720) / 720);
+    return `${Math.max(10, Math.round(designPx * scale))}px`;
+  },
+
   // Colors
   COLORS: {
     RED: 0xe74c3c,

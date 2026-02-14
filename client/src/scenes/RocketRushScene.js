@@ -24,6 +24,7 @@ export class RocketRushScene extends Phaser.Scene {
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
+    const s = CONFIG.s(this);
 
     this.cameras.main.setBackgroundColor(0x0a0a2e);
 
@@ -31,23 +32,23 @@ export class RocketRushScene extends Phaser.Scene {
     this._drawStarfield(W, H);
 
     // ── Finish line at top ──
-    this.add.rectangle(W / 2, 50, W, 4, CONFIG.COLORS.GOLD);
+    this.add.rectangle(W / 2, Math.round(50 * s), W, Math.max(2, Math.round(4 * s)), CONFIG.COLORS.GOLD);
     this.add
-      .text(W / 2, 25, "🏁 FINISH LINE 🏁", {
-        fontSize: "20px",
+      .text(W / 2, Math.round(25 * s), "🏁 FINISH LINE 🏁", {
+        fontSize: CONFIG.fs(this, 18),
         color: "#ffd700",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
 
     // ── Launch pad at bottom ──
-    this.add.rectangle(W / 2, H - 30, W, 60, 0x2d3436);
+    this.add.rectangle(W / 2, H - Math.round(30 * s), W, Math.round(60 * s), 0x2d3436);
     this.add
-      .text(W / 4, H - 30, "🔴 RED PAD", { fontSize: "14px", color: "#ff6b6b" })
+      .text(W / 4, H - Math.round(30 * s), "🔴 RED PAD", { fontSize: CONFIG.fs(this, 12), color: "#ff6b6b" })
       .setOrigin(0.5);
     this.add
-      .text((3 * W) / 4, H - 30, "🔵 BLUE PAD", {
-        fontSize: "14px",
+      .text((3 * W) / 4, H - Math.round(30 * s), "🔵 BLUE PAD", {
+        fontSize: CONFIG.fs(this, 12),
         color: "#74b9ff",
       })
       .setOrigin(0.5);
@@ -57,41 +58,44 @@ export class RocketRushScene extends Phaser.Scene {
     const laneBlueX = (3 * W) / 4;
 
     // Lane divider
-    this.add.line(0, 0, W / 2, 60, W / 2, H - 60, 0xffffff, 0.15).setOrigin(0);
+    this.add.line(0, 0, W / 2, Math.round(60 * s), W / 2, H - Math.round(60 * s), 0xffffff, 0.15).setOrigin(0);
 
     // ── Altitude markers ──
     for (let pct = 0; pct <= 100; pct += 25) {
-      const y = this._altitudeToY(pct);
-      this.add.line(0, 0, 20, y, W - 20, y, 0xffffff, 0.1).setOrigin(0);
-      this.add.text(10, y - 10, `${pct}%`, { fontSize: "12px", color: "#666" });
+      const y = this._altitudeToY(pct, H, s);
+      this.add.line(0, 0, Math.round(20 * s), y, W - Math.round(20 * s), y, 0xffffff, 0.1).setOrigin(0);
+      this.add.text(Math.round(8 * s), y - Math.round(10 * s), `${pct}%`, { fontSize: CONFIG.fs(this, 11), color: "#666" });
     }
 
     // ── Rockets ──
-    this.trackTop = 70;
-    this.trackBottom = H - 70;
+    this.trackTop = Math.round(70 * s);
+    this.trackBottom = H - Math.round(70 * s);
+    this._rocketScale = s;
 
     this.redRocket = this._createRocket(
       laneRedX,
       this.trackBottom,
       CONFIG.COLORS.RED,
       "🔴",
+      s,
     );
     this.blueRocket = this._createRocket(
       laneBlueX,
       this.trackBottom,
       CONFIG.COLORS.BLUE,
       "🔵",
+      s,
     );
 
     // ── Exhaust particles ──
     this.redExhaust = this.add.particles(
       laneRedX,
-      this.trackBottom + 30,
+      this.trackBottom + Math.round(30 * s),
       "particle-fire",
       {
         speed: { min: 50, max: 150 },
         angle: { min: 80, max: 100 },
-        scale: { start: 0.8, end: 0 },
+        scale: { start: Math.max(0.3, 0.8 * s), end: 0 },
         lifespan: 400,
         frequency: 50,
         blendMode: "ADD",
@@ -101,12 +105,12 @@ export class RocketRushScene extends Phaser.Scene {
 
     this.blueExhaust = this.add.particles(
       laneBlueX,
-      this.trackBottom + 30,
+      this.trackBottom + Math.round(30 * s),
       "particle-fire",
       {
         speed: { min: 50, max: 150 },
         angle: { min: 80, max: 100 },
-        scale: { start: 0.8, end: 0 },
+        scale: { start: Math.max(0.3, 0.8 * s), end: 0 },
         lifespan: 400,
         frequency: 50,
         blendMode: "ADD",
@@ -116,15 +120,15 @@ export class RocketRushScene extends Phaser.Scene {
 
     // ── Altitude text ──
     this.redAltText = this.add
-      .text(laneRedX, H - 10, "Alt: 0%", {
-        fontSize: "16px",
+      .text(laneRedX, H - Math.round(8 * s), "Alt: 0%", {
+        fontSize: CONFIG.fs(this, 14),
         color: "#ff6b6b",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
     this.blueAltText = this.add
-      .text(laneBlueX, H - 10, "Alt: 0%", {
-        fontSize: "16px",
+      .text(laneBlueX, H - Math.round(8 * s), "Alt: 0%", {
+        fontSize: CONFIG.fs(this, 14),
         color: "#74b9ff",
         fontStyle: "bold",
       })
@@ -132,8 +136,8 @@ export class RocketRushScene extends Phaser.Scene {
 
     // ── Timer ──
     this.timerText = this.add
-      .text(W / 2, 80, "⏰ 100", {
-        fontSize: "28px",
+      .text(W / 2, Math.round(75 * s), "⏰ 100", {
+        fontSize: CONFIG.fs(this, 26),
         color: "#ffd700",
         fontStyle: "bold",
       })
@@ -162,22 +166,23 @@ export class RocketRushScene extends Phaser.Scene {
     });
 
     // ── Quit Game button (top-right corner) ──
-    this._createQuitButton(W);
+    this._createQuitButton(W, s);
 
     // ── Socket + keyboard ──
     this._setupListeners();
     this._setupKeyboard();
   }
 
-  _createQuitButton(W) {
-    const quitBtn = this.add.text(W - 16, 16, "✖ Quit Game", {
-      fontSize: "16px",
+  _createQuitButton(W, s) {
+    s = s || CONFIG.s(this);
+    const quitBtn = this.add.text(W - Math.round(16 * s), Math.round(16 * s), "✖ Quit Game", {
+      fontSize: CONFIG.fs(this, 14),
       fontFamily: "Arial Rounded MT Bold, Arial Black, sans-serif",
       color: "#ff6b6b",
       backgroundColor: "#1a1a2e",
-      padding: { x: 14, y: 8 },
+      padding: { x: Math.round(12 * s), y: Math.round(6 * s) },
       stroke: "#000",
-      strokeThickness: 2,
+      strokeThickness: Math.max(1, Math.round(2 * s)),
     })
       .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true })
@@ -201,21 +206,24 @@ export class RocketRushScene extends Phaser.Scene {
     if (this._quitOverlay) return;
     const W = this.scale.width;
     const H = this.scale.height;
+    const s = CONFIG.s(this);
+    const panelW = Math.min(Math.round(420 * s), W - 20);
+    const panelH = Math.min(Math.round(200 * s), H - 20);
 
     const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(400).setInteractive();
-    const panel = this.add.rectangle(W / 2, H / 2, 420, 200, 0x1a1a2e, 0.97).setStrokeStyle(3, 0xe74c3c).setDepth(401);
-    const shadow = this.add.rectangle(W / 2 + 6, H / 2 + 8, 420, 200, 0x000000, 0.3).setDepth(400);
-    const title = this.add.text(W / 2, H / 2 - 55, "⚠️  Quit Game?", {
-      fontSize: "28px", fontStyle: "bold", color: "#ffd700",
+    const panel = this.add.rectangle(W / 2, H / 2, panelW, panelH, 0x1a1a2e, 0.97).setStrokeStyle(Math.max(1, Math.round(3 * s)), 0xe74c3c).setDepth(401);
+    const shadow = this.add.rectangle(W / 2 + Math.round(6 * s), H / 2 + Math.round(8 * s), panelW, panelH, 0x000000, 0.3).setDepth(400);
+    const title = this.add.text(W / 2, H / 2 - Math.round(55 * s), "⚠️  Quit Game?", {
+      fontSize: CONFIG.fs(this, 26), fontStyle: "bold", color: "#ffd700",
       shadow: { offsetX: 0, offsetY: 2, color: "#000", blur: 8, fill: true },
     }).setOrigin(0.5).setDepth(402);
-    const msg = this.add.text(W / 2, H / 2 - 10, "You will leave the current match.", {
-      fontSize: "16px", color: "#ccc",
+    const msg = this.add.text(W / 2, H / 2 - Math.round(10 * s), "You will leave the current match.", {
+      fontSize: CONFIG.fs(this, 14), color: "#ccc",
     }).setOrigin(0.5).setDepth(402);
 
-    const yesBtn = this.add.text(W / 2 - 80, H / 2 + 50, "Yes, Quit", {
-      fontSize: "18px", fontStyle: "bold", color: "#fff", backgroundColor: "#e74c3c",
-      padding: { x: 18, y: 8 }, stroke: "#000", strokeThickness: 2,
+    const yesBtn = this.add.text(W / 2 - Math.round(80 * s), H / 2 + Math.round(50 * s), "Yes, Quit", {
+      fontSize: CONFIG.fs(this, 16), fontStyle: "bold", color: "#fff", backgroundColor: "#e74c3c",
+      padding: { x: Math.round(16 * s), y: Math.round(7 * s) }, stroke: "#000", strokeThickness: Math.max(1, Math.round(2 * s)),
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(402);
     yesBtn.on("pointerover", () => yesBtn.setStyle({ backgroundColor: "#ff4444" }));
     yesBtn.on("pointerout", () => yesBtn.setStyle({ backgroundColor: "#e74c3c" }));
@@ -225,9 +233,9 @@ export class RocketRushScene extends Phaser.Scene {
       this.scene.start("LobbyScene");
     });
 
-    const noBtn = this.add.text(W / 2 + 80, H / 2 + 50, "Cancel", {
-      fontSize: "18px", fontStyle: "bold", color: "#fff", backgroundColor: "#636e72",
-      padding: { x: 18, y: 8 }, stroke: "#000", strokeThickness: 2,
+    const noBtn = this.add.text(W / 2 + Math.round(80 * s), H / 2 + Math.round(50 * s), "Cancel", {
+      fontSize: CONFIG.fs(this, 16), fontStyle: "bold", color: "#fff", backgroundColor: "#636e72",
+      padding: { x: Math.round(16 * s), y: Math.round(7 * s) }, stroke: "#000", strokeThickness: Math.max(1, Math.round(2 * s)),
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(402);
     noBtn.on("pointerover", () => noBtn.setStyle({ backgroundColor: "#74b9ff" }));
     noBtn.on("pointerout", () => noBtn.setStyle({ backgroundColor: "#636e72" }));
@@ -239,19 +247,21 @@ export class RocketRushScene extends Phaser.Scene {
     this._quitOverlay = { dim, panel, shadow, title, msg, yesBtn, noBtn };
   }
 
-  _createRocket(x, y, color, emoji) {
+  _createRocket(x, y, color, emoji, s) {
+    s = s || CONFIG.s(this);
     const container = this.add.container(x, y);
 
     // Rocket body
+    const bw = Math.round(30 * s), bh = Math.round(50 * s);
     const body = this.add
-      .rectangle(0, 0, 30, 50, color)
-      .setStrokeStyle(2, 0xffffff);
-    const nose = this.add.triangle(0, -35, -15, 0, 15, 0, 0, -20, color);
-    const fin1 = this.add.triangle(-18, 20, 0, -10, 0, 10, -12, 10, color);
-    const fin2 = this.add.triangle(18, 20, 0, -10, 0, 10, 12, 10, color);
-    const window = this.add.circle(0, -8, 8, 0x74b9ff);
+      .rectangle(0, 0, bw, bh, color)
+      .setStrokeStyle(Math.max(1, Math.round(2 * s)), 0xffffff);
+    const nose = this.add.triangle(0, Math.round(-35 * s), Math.round(-15 * s), 0, Math.round(15 * s), 0, 0, Math.round(-20 * s), color);
+    const fin1 = this.add.triangle(Math.round(-18 * s), Math.round(20 * s), 0, Math.round(-10 * s), 0, Math.round(10 * s), Math.round(-12 * s), Math.round(10 * s), color);
+    const fin2 = this.add.triangle(Math.round(18 * s), Math.round(20 * s), 0, Math.round(-10 * s), 0, Math.round(10 * s), Math.round(12 * s), Math.round(10 * s), color);
+    const window = this.add.circle(0, Math.round(-8 * s), Math.round(8 * s), 0x74b9ff);
     const label = this.add
-      .text(0, -60, emoji, { fontSize: "24px" })
+      .text(0, Math.round(-60 * s), emoji, { fontSize: CONFIG.fs(this, 22) })
       .setOrigin(0.5);
 
     container.add([body, nose, fin1, fin2, window, label]);
@@ -277,10 +287,12 @@ export class RocketRushScene extends Phaser.Scene {
     }
   }
 
-  _altitudeToY(altitude) {
-    // 0% = trackBottom, 100% = trackTop
+  _altitudeToY(altitude, H, s) {
+    // Allow call with or without explicit H/s (for use in create before trackTop/Bottom set)
+    const top = this.trackTop || Math.round(70 * (s || CONFIG.s(this)));
+    const bottom = this.trackBottom || (H || this.scale.height) - Math.round(70 * (s || CONFIG.s(this)));
     return (
-      this.trackBottom - (altitude / 100) * (this.trackBottom - this.trackTop)
+      bottom - (altitude / 100) * (bottom - top)
     );
   }
 
@@ -367,21 +379,24 @@ export class RocketRushScene extends Phaser.Scene {
     this._opponentLeftShown = true;
     const W = this.scale.width;
     const H = this.scale.height;
+    const s = CONFIG.s(this);
+    const panelW = Math.min(Math.round(480 * s), W - 20);
+    const panelH = Math.min(Math.round(220 * s), H - 20);
 
     const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.75).setDepth(500).setInteractive();
-    const panel = this.add.rectangle(W / 2, H / 2, 480, 220, 0x1a1a2e, 0.97).setStrokeStyle(3, 0xffd700).setDepth(501);
-    const shadow = this.add.rectangle(W / 2 + 6, H / 2 + 8, 480, 220, 0x000000, 0.3).setDepth(500);
-    const icon = this.add.text(W / 2, H / 2 - 60, "🚪", { fontSize: "48px" }).setOrigin(0.5).setDepth(502);
-    const title = this.add.text(W / 2, H / 2 - 15, "Opponent Left!", {
-      fontSize: "28px", fontStyle: "bold", color: "#ffd700",
+    const panel = this.add.rectangle(W / 2, H / 2, panelW, panelH, 0x1a1a2e, 0.97).setStrokeStyle(Math.max(1, Math.round(3 * s)), 0xffd700).setDepth(501);
+    const shadow = this.add.rectangle(W / 2 + Math.round(6 * s), H / 2 + Math.round(8 * s), panelW, panelH, 0x000000, 0.3).setDepth(500);
+    const icon = this.add.text(W / 2, H / 2 - Math.round(60 * s), "🚪", { fontSize: CONFIG.fs(this, 42) }).setOrigin(0.5).setDepth(502);
+    const title = this.add.text(W / 2, H / 2 - Math.round(15 * s), "Opponent Left!", {
+      fontSize: CONFIG.fs(this, 26), fontStyle: "bold", color: "#ffd700",
       shadow: { offsetX: 0, offsetY: 2, color: "#000", blur: 8, fill: true },
     }).setOrigin(0.5).setDepth(502);
-    const msg = this.add.text(W / 2, H / 2 + 25, message, {
-      fontSize: "16px", color: "#ccc",
+    const msg = this.add.text(W / 2, H / 2 + Math.round(25 * s), message, {
+      fontSize: CONFIG.fs(this, 14), color: "#ccc",
     }).setOrigin(0.5).setDepth(502);
-    const okBtn = this.add.text(W / 2, H / 2 + 70, "Back to Lobby", {
-      fontSize: "20px", fontStyle: "bold", color: "#fff", backgroundColor: "#6c5ce7",
-      padding: { x: 24, y: 10 }, stroke: "#000", strokeThickness: 2,
+    const okBtn = this.add.text(W / 2, H / 2 + Math.round(70 * s), "Back to Lobby", {
+      fontSize: CONFIG.fs(this, 18), fontStyle: "bold", color: "#fff", backgroundColor: "#6c5ce7",
+      padding: { x: Math.round(20 * s), y: Math.round(8 * s) }, stroke: "#000", strokeThickness: Math.max(1, Math.round(2 * s)),
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(502);
     okBtn.on("pointerover", () => okBtn.setStyle({ backgroundColor: "#a29bfe" }));
     okBtn.on("pointerout", () => okBtn.setStyle({ backgroundColor: "#6c5ce7" }));
@@ -476,8 +491,9 @@ export class RocketRushScene extends Phaser.Scene {
     });
 
     // Move exhaust
-    this.redExhaust.setPosition(this.redRocket.x, redY + 35);
-    this.blueExhaust.setPosition(this.blueRocket.x, blueY + 35);
+    const exOff = Math.round(35 * (this._rocketScale || CONFIG.s(this)));
+    this.redExhaust.setPosition(this.redRocket.x, redY + exOff);
+    this.blueExhaust.setPosition(this.blueRocket.x, blueY + exOff);
 
     // Update text
     this.redAltText.setText(`Alt: ${Math.round(redAlt)}%`);
@@ -503,11 +519,12 @@ export class RocketRushScene extends Phaser.Scene {
 
   update() {
     // Exhaust follows rockets smoothly
+    const exOff = Math.round(35 * (this._rocketScale || CONFIG.s(this)));
     if (this.redRocket && this.redExhaust) {
-      this.redExhaust.setPosition(this.redRocket.x, this.redRocket.y + 35);
+      this.redExhaust.setPosition(this.redRocket.x, this.redRocket.y + exOff);
     }
     if (this.blueRocket && this.blueExhaust) {
-      this.blueExhaust.setPosition(this.blueRocket.x, this.blueRocket.y + 35);
+      this.blueExhaust.setPosition(this.blueRocket.x, this.blueRocket.y + exOff);
     }
   }
 }

@@ -16,6 +16,7 @@ export class LobbyScene extends Phaser.Scene {
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
+    const s = CONFIG.s(this);
 
     // ── Clean up any stale socket listeners from previous sessions ──
     this._cleanupLobbyListeners();
@@ -31,20 +32,20 @@ export class LobbyScene extends Phaser.Scene {
     this._createParticles(W, H);
 
     // ── Header Section ──
-    this._createHeader(W);
+    this._createHeader(W, s);
 
     // ── Game Mode Cards ──
-    this._createModeCards(W);
+    this._createModeCards(W, s);
 
     // ── Player Setup Section ──
-    this._createPlayerSection(W);
+    this._createPlayerSection(W, s);
 
     // ── Room Action Buttons ──
-    this._createRoomActions(W);
+    this._createRoomActions(W, s);
 
     // ── Status text for errors (visible on main screen) ──
-    this.statusText = this.add.text(W / 2, 560, "", {
-      fontSize: "16px",
+    this.statusText = this.add.text(W / 2, Math.round(560 * s), "", {
+      fontSize: CONFIG.fs(this, 15),
       fontFamily: "Arial, sans-serif",
       color: "#ff6b6b",
       fontStyle: "bold",
@@ -54,7 +55,7 @@ export class LobbyScene extends Phaser.Scene {
     this._checkConnection();
 
     // ── Waiting Room Panel (hidden initially) ──
-    this._createWaitingPanel(W, H);
+    this._createWaitingPanel(W, H, s);
 
     // ── Keyboard input for room code ──
     this._setupKeyboard();
@@ -63,10 +64,10 @@ export class LobbyScene extends Phaser.Scene {
     this._setupSocketListeners();
 
     // ── Footer ──
-    this._createFooter(W, H);
+    this._createFooter(W, H, s);
 
     // ── Back button ──
-    this._createBackButton();
+    this._createBackButton(s);
 
     // ── Entry animation — fade in from black ──
     this.cameras.main.fadeIn(400, 0, 0, 0);
@@ -194,9 +195,9 @@ export class LobbyScene extends Phaser.Scene {
   //  HEADER
   // ═══════════════════════════════════════════════════════════
 
-  _createHeader(W) {
+  _createHeader(W, s) {
     // Glowing line under header
-    const headerLine = this.add.rectangle(W / 2, 100, 600, 2, 0xffd700, 0.5);
+    const headerLine = this.add.rectangle(W / 2, Math.round(100 * s), Math.min(Math.round(600 * s), W - 40), 2, 0xffd700, 0.5);
     this.tweens.add({
       targets: headerLine,
       scaleX: 1.1,
@@ -209,23 +210,23 @@ export class LobbyScene extends Phaser.Scene {
 
     // Title with glow
     const titleGlow = this.add
-      .text(W / 2, 42, "🧠 BattleBrains", {
-        fontSize: "44px",
+      .text(W / 2, Math.round(42 * s), "🧠 BattleBrains", {
+        fontSize: CONFIG.fs(this, 40),
         fontFamily: "Arial Rounded MT Bold, Arial Black, sans-serif",
         color: "#ffd700",
         stroke: "#ffa500",
-        strokeThickness: 4,
+        strokeThickness: Math.max(2, Math.round(4 * s)),
       })
       .setOrigin(0.5)
       .setAlpha(0.3);
 
     const title = this.add
-      .text(W / 2, 40, "🧠 BattleBrains", {
-        fontSize: "44px",
+      .text(W / 2, Math.round(40 * s), "🧠 BattleBrains", {
+        fontSize: CONFIG.fs(this, 40),
         fontFamily: "Arial Rounded MT Bold, Arial Black, sans-serif",
         color: "#ffd700",
         stroke: "#000",
-        strokeThickness: 3,
+        strokeThickness: Math.max(2, Math.round(3 * s)),
       })
       .setOrigin(0.5);
 
@@ -243,8 +244,8 @@ export class LobbyScene extends Phaser.Scene {
 
     // Subtitle slide in
     const subtitle = this.add
-      .text(W / 2, 75, "Choose Your Battle Arena", {
-        fontSize: "16px",
+      .text(W / 2, Math.round(75 * s), "Choose Your Battle Arena", {
+        fontSize: CONFIG.fs(this, 15),
         fontFamily: "Arial, sans-serif",
         color: "#aabbdd",
         fontStyle: "italic",
@@ -254,7 +255,7 @@ export class LobbyScene extends Phaser.Scene {
     this.tweens.add({
       targets: subtitle,
       alpha: 1,
-      y: 72,
+      y: Math.round(72 * s),
       duration: 800,
       delay: 300,
       ease: "Power2",
@@ -265,11 +266,13 @@ export class LobbyScene extends Phaser.Scene {
   //  GAME MODE CARDS (the main attraction!)
   // ═══════════════════════════════════════════════════════════
 
-  _createModeCards(W) {
-    const cardY = 215;
-    const cardW = 320;
-    const cardH = 200;
-    const gap = 40;
+  _createModeCards(W, s) {
+    const cardY = Math.round(215 * s);
+    // Scale cards to fit within available width
+    const maxCardW = (W - 40) / 3 - 10; // leave margins
+    const cardW = Math.min(Math.round(300 * s), maxCardW);
+    const cardH = Math.min(Math.round(190 * s), Math.round(cardW * 0.625));
+    const gap = Math.max(8, Math.round(20 * s));
     const totalWidth = 3 * cardW + 2 * gap;
     const startX = (W - totalWidth) / 2 + cardW / 2;
 
@@ -341,24 +344,25 @@ export class LobbyScene extends Phaser.Scene {
 
       // ── Big emoji icon ──
       const bigEmoji = this.add
-        .text(0, -25, mode.emoji, {
-          fontSize: "52px",
+        .text(0, Math.round(-25 * s), mode.emoji, {
+          fontSize: CONFIG.fs(this, 44),
         })
         .setOrigin(0.5);
       container.add(bigEmoji);
 
       // ── Orbiting mini icons ──
       const orbit1 = this.add
-        .text(-50, -20, mode.icon2, { fontSize: "18px" })
+        .text(Math.round(-50 * s), Math.round(-20 * s), mode.icon2, { fontSize: CONFIG.fs(this, 16) })
         .setOrigin(0.5)
         .setAlpha(0.5);
       const orbit2 = this.add
-        .text(50, -20, mode.icon3, { fontSize: "18px" })
+        .text(Math.round(50 * s), Math.round(-20 * s), mode.icon3, { fontSize: CONFIG.fs(this, 16) })
         .setOrigin(0.5)
         .setAlpha(0.5);
       container.add([orbit1, orbit2]);
 
       // Orbit animation
+      const orbitR = Math.round(50 * s);
       this.tweens.addCounter({
         from: 0,
         to: 360,
@@ -366,17 +370,17 @@ export class LobbyScene extends Phaser.Scene {
         repeat: -1,
         onUpdate: (tween) => {
           const ang = Phaser.Math.DegToRad(tween.getValue());
-          orbit1.x = Math.cos(ang) * 55;
-          orbit1.y = -25 + Math.sin(ang) * 20;
-          orbit2.x = Math.cos(ang + Math.PI) * 55;
-          orbit2.y = -25 + Math.sin(ang + Math.PI) * 20;
+          orbit1.x = Math.cos(ang) * orbitR;
+          orbit1.y = Math.round(-25 * s) + Math.sin(ang) * Math.round(20 * s);
+          orbit2.x = Math.cos(ang + Math.PI) * orbitR;
+          orbit2.y = Math.round(-25 * s) + Math.sin(ang + Math.PI) * Math.round(20 * s);
         },
       });
 
       // ── Title ──
       const titleText = this.add
-        .text(0, 25, mode.title, {
-          fontSize: "22px",
+        .text(0, Math.round(25 * s), mode.title, {
+          fontSize: CONFIG.fs(this, 19),
           fontFamily: "Arial Rounded MT Bold, Arial, sans-serif",
           color: mode.accentHex,
           fontStyle: "bold",
@@ -388,8 +392,8 @@ export class LobbyScene extends Phaser.Scene {
 
       // ── Description ──
       const descText = this.add
-        .text(0, 62, mode.desc, {
-          fontSize: "13px",
+        .text(0, Math.round(58 * s), mode.desc, {
+          fontSize: CONFIG.fs(this, 12),
           fontFamily: "Arial, sans-serif",
           color: "#8899bb",
           align: "center",
@@ -545,32 +549,34 @@ export class LobbyScene extends Phaser.Scene {
   //  PLAYER NAME SECTION
   // ═══════════════════════════════════════════════════════════
 
-  _createPlayerSection(W) {
-    const sectionY = 345;
+  _createPlayerSection(W, s) {
+    const sectionY = Math.round(345 * s);
 
     // Decorative divider
     const divider = this.add.graphics();
     divider.lineStyle(1, 0x6c5ce7, 0.3);
-    divider.lineBetween(W / 2 - 250, sectionY - 20, W / 2 + 250, sectionY - 20);
+    const divW = Math.min(Math.round(250 * s), (W - 40) / 2);
+    divider.lineBetween(W / 2 - divW, sectionY - Math.round(20 * s), W / 2 + divW, sectionY - Math.round(20 * s));
 
     // Label with icon
     this.add
       .text(W / 2, sectionY, "👤  Your Commander Name", {
-        fontSize: "16px",
+        fontSize: CONFIG.fs(this, 15),
         fontFamily: "Arial, sans-serif",
         color: "#8899bb",
       })
       .setOrigin(0.5);
 
     // Name display (styled input look)
+    const inputW = Math.min(Math.round(280 * s), W - 40);
     const nameBg = this.add
-      .rectangle(W / 2, sectionY + 35, 300, 38, 0x1a1a3e, 0.9)
+      .rectangle(W / 2, sectionY + Math.round(35 * s), inputW, Math.round(36 * s), 0x1a1a3e, 0.9)
       .setStrokeStyle(1, 0x6c5ce7)
       .setInteractive({ useHandCursor: true });
 
     this.nameText = this.add
-      .text(W / 2, sectionY + 35, this.playerName, {
-        fontSize: "20px",
+      .text(W / 2, sectionY + Math.round(35 * s), this.playerName, {
+        fontSize: CONFIG.fs(this, 19),
         fontFamily: "Arial, sans-serif",
         color: "#ffffff",
         fontStyle: "bold",
@@ -578,8 +584,8 @@ export class LobbyScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     const editIcon = this.add
-      .text(W / 2 + 130, sectionY + 35, "✏️", {
-        fontSize: "16px",
+      .text(W / 2 + inputW / 2 - Math.round(15 * s), sectionY + Math.round(35 * s), "✏️", {
+        fontSize: CONFIG.fs(this, 14),
       })
       .setOrigin(0.5);
 
@@ -609,56 +615,60 @@ export class LobbyScene extends Phaser.Scene {
   //  ROOM ACTION BUTTONS
   // ═══════════════════════════════════════════════════════════
 
-  _createRoomActions(W) {
-    const btnY = 430;
+  _createRoomActions(W, s) {
+    const btnY = Math.round(430 * s);
+    const btnSpacing = Math.min(Math.round(170 * s), (W - 60) / 2 - 20);
 
     // Create Room button
     this._createFancyButton(
-      W / 2 - 180,
+      W / 2 - btnSpacing,
       btnY,
       "🏠  Create Room",
       0x6c5ce7,
       "#a29bfe",
       () => this._createRoom(),
+      s,
     );
 
     // Join Room button
     this._createFancyButton(
-      W / 2 + 180,
+      W / 2 + btnSpacing,
       btnY,
       "🎮  Join Room",
       0xe67e22,
       "#f0932b",
       () => this._joinRoom(),
+      s,
     );
 
     // Room code input area
-    const inputY = btnY + 60;
+    const inputY = btnY + Math.round(60 * s);
     this.add
       .text(W / 2, inputY, "Room Code:", {
-        fontSize: "14px",
+        fontSize: CONFIG.fs(this, 13),
         fontFamily: "Arial, sans-serif",
         color: "#667799",
       })
       .setOrigin(0.5);
 
+    const codeInputW = Math.min(Math.round(220 * s), W - 40);
     const codeBg = this.add
-      .rectangle(W / 2, inputY + 30, 220, 36, 0x1a1a3e, 0.9)
+      .rectangle(W / 2, inputY + Math.round(30 * s), codeInputW, Math.round(34 * s), 0x1a1a3e, 0.9)
       .setStrokeStyle(1, 0x444477)
       .setInteractive({ useHandCursor: true });
 
     this.roomCodeText = this.add
-      .text(W / 2, inputY + 30, "_ _ _ _ _ _", {
-        fontSize: "22px",
+      .text(W / 2, inputY + Math.round(30 * s), "_ _ _ _ _ _", {
+        fontSize: CONFIG.fs(this, 20),
         fontFamily: "Courier New, monospace",
         color: "#ffd700",
         fontStyle: "bold",
-        letterSpacing: 4,
+        letterSpacing: Math.round(4 * s),
       })
       .setOrigin(0.5);
 
     // Blinking cursor effect
-    const cursor = this.add.rectangle(W / 2 + 80, inputY + 30, 2, 20, 0xffd700);
+    const cursor = this.add.rectangle(W / 2 + codeInputW / 2 - Math.round(10 * s), inputY + Math.round(30 * s), 2, Math.round(20 * s), 0xffd700);
     this.tweens.add({
       targets: cursor,
       alpha: 0,
@@ -672,9 +682,10 @@ export class LobbyScene extends Phaser.Scene {
     codeBg.on("pointerdown", () => this._promptRoomCode());
   }
 
-  _createFancyButton(x, y, label, color, hoverColor, onClick) {
-    const btnW = 240;
-    const btnH = 46;
+  _createFancyButton(x, y, label, color, hoverColor, onClick, s) {
+    s = s || CONFIG.s(this);
+    const btnW = Math.min(Math.round(230 * s), (this.scale.width - 50) / 2);
+    const btnH = Math.max(30, Math.round(44 * s));
 
     // Glow behind
     const glow = this.add.rectangle(x, y, btnW + 8, btnH + 8, color, 0.15);
@@ -698,7 +709,7 @@ export class LobbyScene extends Phaser.Scene {
     // Label
     const txt = this.add
       .text(x, y, label, {
-        fontSize: "18px",
+        fontSize: CONFIG.fs(this, 16),
         fontFamily: "Arial Rounded MT Bold, Arial, sans-serif",
         color: "#ffffff",
         fontStyle: "bold",
@@ -751,9 +762,9 @@ export class LobbyScene extends Phaser.Scene {
   //  WAITING ROOM PANEL
   // ═══════════════════════════════════════════════════════════
 
-  _createWaitingPanel(W, H) {
+  _createWaitingPanel(W, H, s) {
     this.waitingPanel = this.add
-      .container(W / 2, H / 2 + 40)
+      .container(W / 2, H / 2 + Math.round(40 * s))
       .setVisible(false)
       .setDepth(50);
 
@@ -762,8 +773,8 @@ export class LobbyScene extends Phaser.Scene {
     this.waitingPanel.add(this.dimmer);
 
     // Panel background
-    const panelW = 650;
-    const panelH = 340;
+    const panelW = Math.min(Math.round(620 * s), W - 20);
+    const panelH = Math.min(Math.round(330 * s), H - 40);
     const panelBg = this.add
       .rectangle(0, 0, panelW, panelH, 0x12122e, 0.98)
       .setStrokeStyle(2, 0xffd700);
@@ -791,12 +802,12 @@ export class LobbyScene extends Phaser.Scene {
 
     // ── Close (X) button at top-right corner ──
     const closeBtn = this.add
-      .text(panelW / 2 - 16, -panelH / 2 + 16, "✖", {
-        fontSize: "22px",
+      .text(panelW / 2 - Math.round(16 * s), -panelH / 2 + Math.round(16 * s), "✖", {
+        fontSize: CONFIG.fs(this, 20),
         fontFamily: "Arial, sans-serif",
         color: "#ff6b6b",
         backgroundColor: "#1a1a2e",
-        padding: { x: 6, y: 2 },
+        padding: { x: Math.round(6 * s), y: Math.round(2 * s) },
         stroke: "#000",
         strokeThickness: 2,
       })
@@ -822,8 +833,8 @@ export class LobbyScene extends Phaser.Scene {
 
     // Room title
     this.waitingTitle = this.add
-      .text(0, -panelH / 2 + 40, "Room: ------", {
-        fontSize: "28px",
+      .text(0, -panelH / 2 + Math.round(40 * s), "Room: ------", {
+        fontSize: CONFIG.fs(this, 26),
         fontFamily: "Arial Rounded MT Bold, Arial, sans-serif",
         color: "#ffd700",
         stroke: "#000",
@@ -835,8 +846,8 @@ export class LobbyScene extends Phaser.Scene {
     // Divider line
     const panelLine = this.add.rectangle(
       0,
-      -panelH / 2 + 65,
-      panelW - 60,
+      -panelH / 2 + Math.round(65 * s),
+      panelW - Math.round(60 * s),
       1,
       0xffd700,
       0.3,
@@ -844,32 +855,35 @@ export class LobbyScene extends Phaser.Scene {
     this.waitingPanel.add(panelLine);
 
     // Team columns
+    const teamBoxW = Math.min(Math.round(210 * s), (panelW - 60) / 2);
+    const teamBoxH = Math.round(110 * s);
+    const teamSpacing = Math.round(panelW * 0.22);
     // Red team box
     const redBox = this.add
-      .rectangle(-140, 10, 230, 120, 0x2d1515, 0.8)
+      .rectangle(-teamSpacing, Math.round(10 * s), teamBoxW, teamBoxH, 0x2d1515, 0.8)
       .setStrokeStyle(1, 0xff6b6b);
     const redHeader = this.add
-      .text(-140, -45, "🔴 RED TEAM", {
-        fontSize: "16px",
+      .text(-teamSpacing, Math.round(-45 * s), "🔴 RED TEAM", {
+        fontSize: CONFIG.fs(this, 15),
         fontFamily: "Arial, sans-serif",
         color: "#ff6b6b",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
     this.redTeamText = this.add
-      .text(-140, 20, "(waiting...)", {
-        fontSize: "14px",
+      .text(-teamSpacing, Math.round(20 * s), "(waiting...)", {
+        fontSize: CONFIG.fs(this, 13),
         fontFamily: "Arial, sans-serif",
         color: "#ff9999",
         align: "center",
-        wordWrap: { width: 200 },
+        wordWrap: { width: teamBoxW - 10 },
       })
       .setOrigin(0.5);
     this.waitingPanel.add([redBox, redHeader, this.redTeamText]);
 
     // VS badge
     const vsBadge = this.add
-      .text(0, 10, "⚔️", { fontSize: "32px" })
+      .text(0, Math.round(10 * s), "⚔️", { fontSize: CONFIG.fs(this, 28) })
       .setOrigin(0.5);
     this.waitingPanel.add(vsBadge);
     this.tweens.add({
@@ -884,31 +898,31 @@ export class LobbyScene extends Phaser.Scene {
 
     // Blue team box
     const blueBox = this.add
-      .rectangle(140, 10, 230, 120, 0x151530, 0.8)
+      .rectangle(teamSpacing, Math.round(10 * s), teamBoxW, teamBoxH, 0x151530, 0.8)
       .setStrokeStyle(1, 0x74b9ff);
     const blueHeader = this.add
-      .text(140, -45, "🔵 BLUE TEAM", {
-        fontSize: "16px",
+      .text(teamSpacing, Math.round(-45 * s), "🔵 BLUE TEAM", {
+        fontSize: CONFIG.fs(this, 15),
         fontFamily: "Arial, sans-serif",
         color: "#74b9ff",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
     this.blueTeamText = this.add
-      .text(140, 20, "(waiting...)", {
-        fontSize: "14px",
+      .text(teamSpacing, Math.round(20 * s), "(waiting...)", {
+        fontSize: CONFIG.fs(this, 13),
         fontFamily: "Arial, sans-serif",
         color: "#99bbff",
         align: "center",
-        wordWrap: { width: 200 },
+        wordWrap: { width: teamBoxW - 10 },
       })
       .setOrigin(0.5);
     this.waitingPanel.add([blueBox, blueHeader, this.blueTeamText]);
 
     // Status text
     this.waitingStatus = this.add
-      .text(0, 85, "Waiting for players...", {
-        fontSize: "14px",
+      .text(0, Math.round(85 * s), "Waiting for players...", {
+        fontSize: CONFIG.fs(this, 13),
         fontFamily: "Arial, sans-serif",
         color: "#8899bb",
         fontStyle: "italic",
@@ -918,8 +932,8 @@ export class LobbyScene extends Phaser.Scene {
 
     // Animated dots for waiting
     this._waitingDots = this.add
-      .text(0, 100, "● ● ●", {
-        fontSize: "12px",
+      .text(0, Math.round(100 * s), "● ● ●", {
+        fontSize: CONFIG.fs(this, 11),
         color: "#6c5ce7",
       })
       .setOrigin(0.5);
@@ -933,10 +947,13 @@ export class LobbyScene extends Phaser.Scene {
     });
 
     // Action buttons row
-    const btnRow = 140;
+    const btnRow = Math.round(140 * s);
+    const startBtnW = Math.min(Math.round(200 * s), (panelW - 40) / 2);
+    const switchBtnW = Math.min(Math.round(170 * s), (panelW - 40) / 2);
+    const btnSpacing = Math.round(panelW * 0.17);
 
     // Start button (green, prominent)
-    const startGlow = this.add.rectangle(-100, btnRow, 210, 48, 0x2ecc71, 0.2);
+    const startGlow = this.add.rectangle(-btnSpacing, btnRow, startBtnW + 10, Math.round(46 * s), 0x2ecc71, 0.2);
     this.tweens.add({
       targets: startGlow,
       scaleX: 1.1,
@@ -950,12 +967,12 @@ export class LobbyScene extends Phaser.Scene {
     this.waitingPanel.add(startGlow);
 
     const startBg = this.add
-      .rectangle(-100, btnRow, 200, 42, 0x2ecc71, 0.95)
+      .rectangle(-btnSpacing, btnRow, startBtnW, Math.round(40 * s), 0x2ecc71, 0.95)
       .setStrokeStyle(1, 0x55efc4)
       .setInteractive({ useHandCursor: true });
     const startTxt = this.add
-      .text(-100, btnRow, "🚀 START BATTLE!", {
-        fontSize: "18px",
+      .text(-btnSpacing, btnRow, "🚀 START BATTLE!", {
+        fontSize: CONFIG.fs(this, 16),
         fontFamily: "Arial Rounded MT Bold, Arial, sans-serif",
         color: "#fff",
         fontStyle: "bold",
@@ -992,12 +1009,12 @@ export class LobbyScene extends Phaser.Scene {
 
     // Switch team button
     const switchBg = this.add
-      .rectangle(100, btnRow, 180, 42, 0x6c5ce7, 0.9)
+      .rectangle(btnSpacing, btnRow, switchBtnW, Math.round(40 * s), 0x6c5ce7, 0.9)
       .setStrokeStyle(1, 0xa29bfe)
       .setInteractive({ useHandCursor: true });
     const switchTxt = this.add
-      .text(100, btnRow, "🔄 Switch Team", {
-        fontSize: "16px",
+      .text(btnSpacing, btnRow, "🔄 Switch Team", {
+        fontSize: CONFIG.fs(this, 15),
         fontFamily: "Arial, sans-serif",
         color: "#fff",
         fontStyle: "bold",
@@ -1074,35 +1091,40 @@ export class LobbyScene extends Phaser.Scene {
   //  FOOTER & BACK BUTTON
   // ═══════════════════════════════════════════════════════════
 
-  _createFooter(W, H) {
+  _createFooter(W, H, s) {
     // Divider
-    this.add.rectangle(W / 2, H - 50, W - 60, 1, 0x333366, 0.3);
+    this.add.rectangle(W / 2, H - Math.round(50 * s), W - Math.round(60 * s), 1, 0x333366, 0.3);
 
-    // Key hints with colored labels
-    const footerY = H - 28;
-    this.add
-      .text(
-        W / 2,
-        footerY,
-        "🔴 RED: Q W E R    |    🔵 BLUE: U I O P    |    🎯 Multi-device: 1 2 3 4",
-        {
-          fontSize: "13px",
-          fontFamily: "Arial, sans-serif",
-          color: "#556688",
-        },
-      )
-      .setOrigin(0.5);
+    // Key hints with colored labels — hide on small screens
+    if (W > 600) {
+      const footerY = H - Math.round(28 * s);
+      this.add
+        .text(
+          W / 2,
+          footerY,
+          "🔴 RED: Q W E R    |    🔵 BLUE: U I O P    |    🎯 Multi-device: 1 2 3 4",
+          {
+            fontSize: CONFIG.fs(this, 12),
+            fontFamily: "Arial, sans-serif",
+            color: "#556688",
+          },
+        )
+        .setOrigin(0.5);
+    }
   }
 
-  _createBackButton() {
+  _createBackButton(s) {
+    s = s || CONFIG.s(this);
+    const btnW = Math.max(60, Math.round(80 * s));
+    const btnH = Math.max(22, Math.round(28 * s));
     const backBg = this.add
-      .rectangle(55, 25, 80, 28, 0x1a1a3e, 0.8)
+      .rectangle(Math.round(55 * s), Math.round(25 * s), btnW, btnH, 0x1a1a3e, 0.8)
       .setStrokeStyle(1, 0x444466)
       .setInteractive({ useHandCursor: true });
 
     const backTxt = this.add
-      .text(55, 25, "◀ Back", {
-        fontSize: "14px",
+      .text(Math.round(55 * s), Math.round(25 * s), "◀ Back", {
+        fontSize: CONFIG.fs(this, 13),
         fontFamily: "Arial, sans-serif",
         color: "#778899",
       })

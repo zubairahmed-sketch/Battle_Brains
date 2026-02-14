@@ -1,7 +1,7 @@
 // ============================================================
 // QuestionOverlay — Shows quiz question + 4 answer options
 // Supports both touch (tap buttons) and keyboard input
-// Positioned at bottom-center of game scene
+// Positioned at bottom-center of game scene — FULLY RESPONSIVE
 // ============================================================
 
 import { CONFIG } from "../config.js";
@@ -10,111 +10,123 @@ export class QuestionOverlay {
   constructor(scene, onAnswer) {
     this.scene = scene;
     this.onAnswer = onAnswer;
-    this.container = scene.add.container(
-      scene.scale.width / 2,
-      scene.scale.height - 180,
-    );
-    this.answeredTeams = { red: false, blue: false }; // per-team tracking (supports single-device mode)
+    this.answeredTeams = { red: false, blue: false };
     this.optionButtons = [];
+
+    const W = scene.scale.width;
+    const H = scene.scale.height;
+    const s = CONFIG.s(scene);
+
+    // Panel dimensions — responsive: never wider than screen - 20px
+    this.panelW = Math.min(700 * s, W - 20);
+    this.panelH = Math.min(200 * s, H * 0.32);
+
+    this.container = scene.add.container(W / 2, H - this.panelH / 2 - 10 * s);
     this._build();
   }
 
   _build() {
+    const s = CONFIG.s(this.scene);
+    const W = this.scene.scale.width;
+    const pw = this.panelW;
+    const ph = this.panelH;
+
     // ── Background panel ──
-    // Glassmorphism background with glowing border
     this.bg = this.scene.add
-      .rectangle(0, 0, 700, 200, 0xffffff, 0.13)
-      .setStrokeStyle(4, CONFIG.COLORS.GOLD)
+      .rectangle(0, 0, pw, ph, 0xffffff, 0.13)
+      .setStrokeStyle(Math.max(2, 4 * s), CONFIG.COLORS.GOLD)
       .setDepth(1);
-    // Soft shadow effect (fake 3D)
     this.shadow = this.scene.add
-      .rectangle(8, 12, 700, 200, 0x000000, 0.18)
+      .rectangle(4 * s, 6 * s, pw, ph, 0x000000, 0.18)
       .setDepth(0);
     this.container.add([this.shadow, this.bg]);
 
     // ── Category badge ──
-    this.categoryText = this.scene.add.text(-320, -85, "", {
-      fontSize: "14px",
+    this.categoryText = this.scene.add.text(-pw / 2 + 10 * s, -ph / 2 + 5 * s, "", {
+      fontSize: CONFIG.fs(this.scene, 14),
       color: "#ffd700",
       fontStyle: "bold",
-      shadow: { offsetX: 1, offsetY: 1, color: '#000', blur: 2, fill: true },
     });
     this.container.add(this.categoryText);
 
     // ── Question text ──
     this.questionText = this.scene.add
-      .text(0, -55, "Waiting for question...", {
-        ...CONFIG.FONT.QUESTION,
-        align: "center",
-        wordWrap: { width: 640 },
-        fontSize: "28px",
+      .text(0, -ph / 2 + 25 * s, "Waiting for question...", {
+        fontSize: CONFIG.fs(this.scene, 24),
+        fontFamily: "Arial, sans-serif",
         color: "#fff",
         fontStyle: "bold",
-        shadow: { offsetX: 0, offsetY: 2, color: '#ffd700', blur: 8, fill: true },
+        align: "center",
+        wordWrap: { width: pw - 30 * s },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5, 0);
     this.container.add(this.questionText);
 
-    // ── Answer options (2x2 grid) ──
+    // ── Answer options (2x2 grid) — responsive ──
+    const optW = Math.min(300 * s, (pw - 30 * s) / 2);
+    const optH = Math.min(42 * s, ph * 0.2);
+    const gapX = optW + 10 * s;
+    const baseY = 5 * s;
+    const rowGap = optH + 8 * s;
+
     const positions = [
-      { x: -165, y: 20 }, // Top-left
-      { x: 165, y: 20 }, // Top-right
-      { x: -165, y: 70 }, // Bottom-left
-      { x: 165, y: 70 }, // Bottom-right
+      { x: -gapX / 2, y: baseY },
+      { x: gapX / 2, y: baseY },
+      { x: -gapX / 2, y: baseY + rowGap },
+      { x: gapX / 2, y: baseY + rowGap },
     ];
 
-    const redKeyLabels = CONFIG.KEYS.RED.ANSWER; // Q, W, E, R
-    const blueKeyLabels = CONFIG.KEYS.BLUE.ANSWER; // U, I, O, P
+    const redKeyLabels = CONFIG.KEYS.RED.ANSWER;
+    const blueKeyLabels = CONFIG.KEYS.BLUE.ANSWER;
+    const showKeyHints = W > 600; // hide key hints on narrow screens
 
     positions.forEach((pos, i) => {
-      // Option background with glassy look and glow
       const optBg = this.scene.add
-        .rectangle(pos.x, pos.y, 300, 42, 0xffffff, 0.18)
-        .setStrokeStyle(2, 0x6c5ce7)
+        .rectangle(pos.x, pos.y, optW, optH, 0xffffff, 0.18)
+        .setStrokeStyle(Math.max(1, 2 * s), 0x6c5ce7)
         .setDepth(2)
         .setInteractive({ useHandCursor: true });
 
-      // Option shadow for 3D effect
       const optShadow = this.scene.add
-        .rectangle(pos.x + 4, pos.y + 6, 300, 42, 0x000000, 0.13)
+        .rectangle(pos.x + 2 * s, pos.y + 3 * s, optW, optH, 0x000000, 0.13)
         .setDepth(1);
 
-      // Key hints on left and right
-      const redKeyHint = this.scene.add
-        .text(pos.x - 140, pos.y, redKeyLabels[i], {
-          fontSize: "14px",
-          color: "#ff6b6b",
-          fontStyle: "bold",
-          backgroundColor: "#2d1515",
-          padding: { x: 4, y: 2 },
-          shadow: { offsetX: 1, offsetY: 1, color: '#000', blur: 2, fill: true },
-        })
-        .setOrigin(0.5);
+      let redKeyHint = null;
+      let blueKeyHint = null;
+      if (showKeyHints) {
+        redKeyHint = this.scene.add
+          .text(pos.x - optW / 2 + 4 * s, pos.y, redKeyLabels[i], {
+            fontSize: CONFIG.fs(this.scene, 12),
+            color: "#ff6b6b",
+            fontStyle: "bold",
+            backgroundColor: "#2d1515",
+            padding: { x: 2, y: 1 },
+          })
+          .setOrigin(0, 0.5)
+          .setDepth(3);
 
-      const blueKeyHint = this.scene.add
-        .text(pos.x + 140, pos.y, blueKeyLabels[i], {
-          fontSize: "14px",
-          color: "#74b9ff",
-          fontStyle: "bold",
-          backgroundColor: "#151530",
-          padding: { x: 4, y: 2 },
-          shadow: { offsetX: 1, offsetY: 1, color: '#000', blur: 2, fill: true },
-        })
-        .setOrigin(0.5);
+        blueKeyHint = this.scene.add
+          .text(pos.x + optW / 2 - 4 * s, pos.y, blueKeyLabels[i], {
+            fontSize: CONFIG.fs(this.scene, 12),
+            color: "#74b9ff",
+            fontStyle: "bold",
+            backgroundColor: "#151530",
+            padding: { x: 2, y: 1 },
+          })
+          .setOrigin(1, 0.5)
+          .setDepth(3);
+      }
 
-      // Option text
       const optText = this.scene.add
         .text(pos.x, pos.y, "", {
-          fontSize: "22px",
+          fontSize: CONFIG.fs(this.scene, 18),
           color: "#fff",
           fontStyle: "bold",
-          shadow: { offsetX: 0, offsetY: 2, color: '#ffd700', blur: 6, fill: true },
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(3);
 
-      // Touch handler — uses SocketManager.team to determine which team clicked
       optBg.on("pointerdown", () => {
-        // Import dynamically to avoid circular dependency issues
         const team = globalThis.__socketManagerTeam || "red";
         if (!this.answeredTeams[team]) {
           this.answeredTeams[team] = true;
@@ -123,7 +135,6 @@ export class QuestionOverlay {
         }
       });
 
-      // Hover effect
       optBg.on("pointerover", () => {
         const team = globalThis.__socketManagerTeam || "red";
         if (!this.answeredTeams[team]) optBg.setFillStyle(0x6c5ce7, 0.22);
@@ -139,18 +150,22 @@ export class QuestionOverlay {
         redKey: redKeyHint,
         blueKey: blueKeyHint,
       });
-      this.container.add([optShadow, optBg, redKeyHint, blueKeyHint, optText]);
+
+      const children = [optShadow, optBg, optText];
+      if (redKeyHint) children.push(redKeyHint, blueKeyHint);
+      this.container.add(children);
     });
 
     // ── Feedback overlay ──
     this.feedbackText = this.scene.add
-      .text(0, -20, "", {
-        fontSize: "36px",
+      .text(0, -10 * s, "", {
+        fontSize: CONFIG.fs(this.scene, 32),
         fontStyle: "bold",
         color: "#fff",
       })
       .setOrigin(0.5)
-      .setAlpha(0);
+      .setAlpha(0)
+      .setDepth(10);
     this.container.add(this.feedbackText);
 
     this.container.setDepth(100);
@@ -196,10 +211,7 @@ export class QuestionOverlay {
     const color = team === "red" ? CONFIG.COLORS.RED : CONFIG.COLORS.BLUE;
     const btn = this.optionButtons[index];
     btn.bg.setStrokeStyle(3, color);
-
-    // Mark team as answered (keyboard path)
     if (team) this.answeredTeams[team] = true;
-
     this.scene.time.delayedCall(300, () => {
       btn.bg.setStrokeStyle(1, 0x636e72);
     });

@@ -1,6 +1,6 @@
 // ============================================================
 // HUD — Heads-Up Display (floating text, notifications)
-// Shared across all game modes
+// Shared across all game modes  ─  RESPONSIVE
 // ============================================================
 
 import Phaser from "phaser";
@@ -9,26 +9,32 @@ import { CONFIG } from "../config.js";
 export class HUD {
   constructor(scene) {
     this.scene = scene;
+    const s = CONFIG.s(scene);
+    const W = scene.scale.width;
     this.notifContainer = scene.add
-      .container(scene.scale.width / 2, 120)
+      .container(W / 2, Math.round(100 * s))
       .setDepth(200);
   }
 
   // Show floating score text (e.g., "+10")
   showFloatingText(text, color = CONFIG.COLORS.GREEN) {
+    const s = CONFIG.s(this.scene);
+    const W = this.scene.scale.width;
+    const H = this.scene.scale.height;
     const hex = "#" + color.toString(16).padStart(6, "0");
+    const spread = Math.round(100 * s);
     const floater = this.scene.add
       .text(
-        this.scene.scale.width / 2 + Phaser.Math.Between(-100, 100),
-        this.scene.scale.height / 2,
+        W / 2 + Phaser.Math.Between(-spread, spread),
+        H / 2,
         text,
         {
-          fontSize: "36px",
+          fontSize: CONFIG.fs(this.scene, 36),
           color: hex,
           fontStyle: "bold",
           stroke: "#ffd700",
-          strokeThickness: 4,
-          shadow: { offsetX: 0, offsetY: 4, color: '#ffd700', blur: 12, fill: true },
+          strokeThickness: Math.max(2, Math.round(4 * s)),
+          shadow: { offsetX: 0, offsetY: Math.round(4 * s), color: '#ffd700', blur: Math.round(12 * s), fill: true },
         },
       )
       .setOrigin(0.5)
@@ -36,7 +42,7 @@ export class HUD {
 
     this.scene.tweens.add({
       targets: floater,
-      y: floater.y - 80,
+      y: floater.y - Math.round(80 * s),
       alpha: 0,
       duration: 1000,
       ease: "Cubic.easeOut",
@@ -46,27 +52,34 @@ export class HUD {
 
   // Show power-up notification banner
   showPowerUpNotification(type, team, description) {
+    const s = CONFIG.s(this.scene);
+    const W = this.scene.scale.width;
+    const bannerW = Math.min(Math.round(500 * s), W - 20);
+    const bannerH = Math.max(36, Math.round(50 * s));
     const icons = { double: "⚡", freeze: "❄️", shield: "🛡️" };
     const icon = icons[type] || "✨";
     const color = team === "red" ? "#ff6b6b" : "#74b9ff";
 
+    // Reposition container for current screen size
+    this.notifContainer.setPosition(W / 2, Math.round(100 * s));
+
     // Glassy notification background with glow
     const bg = this.scene.add
-      .rectangle(0, 0, 500, 54, 0xffffff, 0.13)
+      .rectangle(0, 0, bannerW, bannerH, 0xffffff, 0.13)
       .setStrokeStyle(
-        3,
+        Math.max(2, Math.round(3 * s)),
         team === "red" ? CONFIG.COLORS.RED : CONFIG.COLORS.BLUE,
       )
       .setDepth(1);
     const shadow = this.scene.add
-      .rectangle(6, 8, 500, 54, 0x000000, 0.13)
+      .rectangle(Math.round(6 * s), Math.round(8 * s), bannerW, bannerH, 0x000000, 0.13)
       .setDepth(0);
     const txt = this.scene.add
       .text(0, 0, `${icon} ${description}`, {
-        fontSize: "24px",
+        fontSize: CONFIG.fs(this.scene, 22),
         color: color,
         fontStyle: "bold",
-        shadow: { offsetX: 0, offsetY: 2, color: '#ffd700', blur: 8, fill: true },
+        shadow: { offsetX: 0, offsetY: 2, color: '#ffd700', blur: Math.round(8 * s), fill: true },
       })
       .setOrigin(0.5)
       .setDepth(2);
@@ -81,6 +94,7 @@ export class HUD {
       delay: 1000,
       onComplete: () => {
         bg.destroy();
+        shadow.destroy();
         txt.destroy();
       },
     });

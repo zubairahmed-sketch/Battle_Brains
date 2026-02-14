@@ -23,11 +23,12 @@ export class HUD {
         this.scene.scale.height / 2,
         text,
         {
-          fontSize: "32px",
+          fontSize: "36px",
           color: hex,
           fontStyle: "bold",
-          stroke: "#000",
-          strokeThickness: 3,
+          stroke: "#ffd700",
+          strokeThickness: 4,
+          shadow: { offsetX: 0, offsetY: 4, color: '#ffd700', blur: 12, fill: true },
         },
       )
       .setOrigin(0.5)
@@ -49,21 +50,28 @@ export class HUD {
     const icon = icons[type] || "✨";
     const color = team === "red" ? "#ff6b6b" : "#74b9ff";
 
+    // Glassy notification background with glow
     const bg = this.scene.add
-      .rectangle(0, 0, 500, 50, 0x111122, 0.9)
+      .rectangle(0, 0, 500, 54, 0xffffff, 0.13)
       .setStrokeStyle(
-        2,
+        3,
         team === "red" ? CONFIG.COLORS.RED : CONFIG.COLORS.BLUE,
-      );
+      )
+      .setDepth(1);
+    const shadow = this.scene.add
+      .rectangle(6, 8, 500, 54, 0x000000, 0.13)
+      .setDepth(0);
     const txt = this.scene.add
       .text(0, 0, `${icon} ${description}`, {
-        fontSize: "22px",
+        fontSize: "24px",
         color: color,
         fontStyle: "bold",
+        shadow: { offsetX: 0, offsetY: 2, color: '#ffd700', blur: 8, fill: true },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
 
-    this.notifContainer.add([bg, txt]);
+    this.notifContainer.add([shadow, bg, txt]);
     this.notifContainer.setAlpha(1);
 
     this.scene.tweens.add({

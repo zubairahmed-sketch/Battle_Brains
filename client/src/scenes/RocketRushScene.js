@@ -161,9 +161,81 @@ export class RocketRushScene extends Phaser.Scene {
       emitting: false,
     });
 
+    // ── Quit Game button (top-right corner) ──
+    this._createQuitButton(W);
+
     // ── Socket + keyboard ──
     this._setupListeners();
     this._setupKeyboard();
+  }
+
+  _createQuitButton(W) {
+    const quitBtn = this.add.text(W - 16, 16, "✖ Quit Game", {
+      fontSize: "16px",
+      fontFamily: "Arial Rounded MT Bold, Arial Black, sans-serif",
+      color: "#ff6b6b",
+      backgroundColor: "#1a1a2e",
+      padding: { x: 14, y: 8 },
+      stroke: "#000",
+      strokeThickness: 2,
+    })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(300)
+      .setAlpha(0.9);
+
+    quitBtn.on("pointerover", () => {
+      quitBtn.setStyle({ backgroundColor: "#e74c3c", color: "#fff" });
+      this.tweens.add({ targets: quitBtn, scaleX: 1.08, scaleY: 1.08, duration: 100 });
+    });
+    quitBtn.on("pointerout", () => {
+      quitBtn.setStyle({ backgroundColor: "#1a1a2e", color: "#ff6b6b" });
+      this.tweens.add({ targets: quitBtn, scaleX: 1, scaleY: 1, duration: 100 });
+    });
+    quitBtn.on("pointerdown", () => {
+      this._showQuitConfirm();
+    });
+  }
+
+  _showQuitConfirm() {
+    if (this._quitOverlay) return;
+    const W = this.scale.width;
+    const H = this.scale.height;
+
+    const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(400).setInteractive();
+    const panel = this.add.rectangle(W / 2, H / 2, 420, 200, 0x1a1a2e, 0.97).setStrokeStyle(3, 0xe74c3c).setDepth(401);
+    const shadow = this.add.rectangle(W / 2 + 6, H / 2 + 8, 420, 200, 0x000000, 0.3).setDepth(400);
+    const title = this.add.text(W / 2, H / 2 - 55, "⚠️  Quit Game?", {
+      fontSize: "28px", fontStyle: "bold", color: "#ffd700",
+      shadow: { offsetX: 0, offsetY: 2, color: "#000", blur: 8, fill: true },
+    }).setOrigin(0.5).setDepth(402);
+    const msg = this.add.text(W / 2, H / 2 - 10, "You will leave the current match.", {
+      fontSize: "16px", color: "#ccc",
+    }).setOrigin(0.5).setDepth(402);
+
+    const yesBtn = this.add.text(W / 2 - 80, H / 2 + 50, "Yes, Quit", {
+      fontSize: "18px", fontStyle: "bold", color: "#fff", backgroundColor: "#e74c3c",
+      padding: { x: 18, y: 8 }, stroke: "#000", strokeThickness: 2,
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(402);
+    yesBtn.on("pointerover", () => yesBtn.setStyle({ backgroundColor: "#ff4444" }));
+    yesBtn.on("pointerout", () => yesBtn.setStyle({ backgroundColor: "#e74c3c" }));
+    yesBtn.on("pointerdown", () => {
+      SocketManager.disconnect && SocketManager.disconnect();
+      this.scene.start("LobbyScene");
+    });
+
+    const noBtn = this.add.text(W / 2 + 80, H / 2 + 50, "Cancel", {
+      fontSize: "18px", fontStyle: "bold", color: "#fff", backgroundColor: "#636e72",
+      padding: { x: 18, y: 8 }, stroke: "#000", strokeThickness: 2,
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(402);
+    noBtn.on("pointerover", () => noBtn.setStyle({ backgroundColor: "#74b9ff" }));
+    noBtn.on("pointerout", () => noBtn.setStyle({ backgroundColor: "#636e72" }));
+    noBtn.on("pointerdown", () => {
+      [dim, panel, shadow, title, msg, yesBtn, noBtn].forEach(o => o.destroy());
+      this._quitOverlay = null;
+    });
+
+    this._quitOverlay = { dim, panel, shadow, title, msg, yesBtn, noBtn };
   }
 
   _createRocket(x, y, color, emoji) {

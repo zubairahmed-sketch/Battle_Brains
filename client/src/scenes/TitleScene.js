@@ -497,14 +497,14 @@ export class TitleScene extends Phaser.Scene {
 
   // ── Enter Arena button ──
   _createEnterButton(W, H) {
-    const btnY = H / 2 + 165;
+    const btnY = H - 80;
 
     // Glow behind button
-    const glow = this.add.circle(W / 2, btnY, 100, 0x6c5ce7, 0.15);
+    const glow = this.add.circle(W / 2, btnY, 70, 0x6c5ce7, 0.13);
     this.tweens.add({
       targets: glow,
-      scaleX: 1.4,
-      scaleY: 1.4,
+      scaleX: 1.3,
+      scaleY: 1.3,
       alpha: 0.05,
       duration: 1500,
       yoyo: true,
@@ -512,15 +512,15 @@ export class TitleScene extends Phaser.Scene {
       ease: "Sine.easeInOut",
     });
 
-    // Button
+    // Button (smaller, lower)
     const btn = this.add
       .text(W / 2, btnY, "🎮  ENTER THE ARENA  🎮", {
-        fontSize: "30px",
+        fontSize: "22px",
         fontFamily: "Arial Rounded MT Bold, Arial Black, sans-serif",
         fontStyle: "bold",
         color: "#ffffff",
         backgroundColor: "#6c5ce7",
-        padding: { x: 36, y: 16 },
+        padding: { x: 24, y: 10 },
         stroke: "#000000",
         strokeThickness: 2,
       })

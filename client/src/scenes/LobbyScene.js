@@ -740,6 +740,37 @@ export class LobbyScene extends Phaser.Scene {
       });
     });
 
+    // ── Close (X) button at top-right corner ──
+    const closeBtn = this.add
+      .text(panelW / 2 - 16, -panelH / 2 + 16, "✖", {
+        fontSize: "22px",
+        fontFamily: "Arial, sans-serif",
+        color: "#ff6b6b",
+        backgroundColor: "#1a1a2e",
+        padding: { x: 6, y: 2 },
+        stroke: "#000",
+        strokeThickness: 2,
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .setDepth(60);
+    this.waitingPanel.add(closeBtn);
+
+    closeBtn.on("pointerover", () => {
+      closeBtn.setStyle({ backgroundColor: "#e74c3c", color: "#fff" });
+      this.tweens.add({ targets: closeBtn, scaleX: 1.15, scaleY: 1.15, duration: 80 });
+    });
+    closeBtn.on("pointerout", () => {
+      closeBtn.setStyle({ backgroundColor: "#1a1a2e", color: "#ff6b6b" });
+      this.tweens.add({ targets: closeBtn, scaleX: 1, scaleY: 1, duration: 80 });
+    });
+    closeBtn.on("pointerdown", () => {
+      // Leave room and hide panel
+      SocketManager.leaveRoom && SocketManager.leaveRoom();
+      this.waitingPanel.setVisible(false);
+      this.inRoom = false;
+    });
+
     // Room title
     this.waitingTitle = this.add
       .text(0, -panelH / 2 + 40, "Room: ------", {

@@ -15,6 +15,7 @@ export class TitleScene extends Phaser.Scene {
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
+    const s = CONFIG.s(this);
 
     // ── Deep space gradient background ──
     this._drawBackground(W, H);
@@ -26,15 +27,15 @@ export class TitleScene extends Phaser.Scene {
     this._drawGridLines(W, H);
 
     // ── Central glowing brain orb ──
-    this._createBrainOrb(W, H);
+    this._createBrainOrb(W, H, s);
 
     // ── Title text with staggered letter animation ──
-    this._createAnimatedTitle(W, H);
+    this._createAnimatedTitle(W, H, s);
 
     // ── Subtitle ──
     const subtitle = this.add
-      .text(W / 2, H / 2 - 20, "⚔️ Quiz Battle Arena for Teams! ⚔️", {
-        fontSize: "22px",
+      .text(W / 2, H / 2 - Math.round(20 * s), "⚔️ Quiz Battle Arena for Teams! ⚔️", {
+        fontSize: CONFIG.fs(this, 20),
         fontFamily: "Arial, sans-serif",
         color: "#aaaacc",
         fontStyle: "italic",
@@ -45,20 +46,20 @@ export class TitleScene extends Phaser.Scene {
     this.tweens.add({
       targets: subtitle,
       alpha: 1,
-      y: H / 2 - 10,
+      y: H / 2 - Math.round(10 * s),
       duration: 1200,
       delay: 1800,
       ease: "Power2",
     });
 
     // ── Orbiting game mode icons ──
-    this._createOrbitingIcons(W, H);
+    this._createOrbitingIcons(W, H, s);
 
     // ── Animated features text ──
-    this._createFeatureBadges(W, H);
+    this._createFeatureBadges(W, H, s);
 
     // ── "Enter Arena" button with glow pulse ──
-    this._createEnterButton(W, H);
+    this._createEnterButton(W, H, s);
 
     // ── Floating emoji decorations ──
     this._createFloatingEmojis(W, H);
@@ -67,10 +68,10 @@ export class TitleScene extends Phaser.Scene {
     const credit = this.add
       .text(
         W / 2,
-        H - 25,
-        "🎮 Press ENTER or click to begin  |  Built by RunTime Terror",
+        H - Math.round(25 * s),
+        W > 500 ? "🎮 Press ENTER or click to begin  |  Built by RunTime Terror" : "🎮 Tap to begin",
         {
-          fontSize: "13px",
+          fontSize: CONFIG.fs(this, 13),
           fontFamily: "Arial, sans-serif",
           color: "#555577",
         },
@@ -209,16 +210,17 @@ export class TitleScene extends Phaser.Scene {
   }
 
   // ── Big brain orb in center ──
-  _createBrainOrb(W, H) {
+  _createBrainOrb(W, H, s) {
     const cx = W / 2;
-    const cy = H / 2 - 120;
+    const cy = H / 2 - Math.round(120 * s);
 
     // Outer glow rings
     for (let r = 80; r >= 30; r -= 10) {
+      const sr = Math.round(r * s);
       const ring = this.add.circle(
         cx,
         cy,
-        r,
+        sr,
         0x6c5ce7,
         0.03 + (80 - r) * 0.005,
       );
@@ -235,8 +237,9 @@ export class TitleScene extends Phaser.Scene {
     }
 
     // Core orb
-    const orb = this.add.circle(cx, cy, 28, 0xffd700, 0.9);
-    const orbGlow = this.add.circle(cx, cy, 35, 0xffd700, 0.2);
+    const orbR = Math.round(28 * s);
+    const orb = this.add.circle(cx, cy, orbR, 0xffd700, 0.9);
+    const orbGlow = this.add.circle(cx, cy, Math.round(35 * s), 0xffd700, 0.2);
 
     this.tweens.add({
       targets: orb,
@@ -261,7 +264,7 @@ export class TitleScene extends Phaser.Scene {
 
     // Brain emoji
     const brain = this.add
-      .text(cx, cy, "🧠", { fontSize: "52px" })
+      .text(cx, cy, "🧠", { fontSize: CONFIG.fs(this, 48) })
       .setOrigin(0.5);
     this.tweens.add({
       targets: brain,
@@ -274,10 +277,10 @@ export class TitleScene extends Phaser.Scene {
     // Electric arcs around brain
     for (let i = 0; i < 6; i++) {
       const angle = (i / 6) * Math.PI * 2;
-      const arcDist = 55;
+      const arcDist = Math.round(55 * s);
       const ax = cx + Math.cos(angle) * arcDist;
       const ay = cy + Math.sin(angle) * arcDist;
-      const arc = this.add.circle(ax, ay, 2, 0x74b9ff, 0.8);
+      const arc = this.add.circle(ax, ay, Math.max(1, Math.round(2 * s)), 0x74b9ff, 0.8);
 
       this.tweens.add({
         targets: arc,
@@ -294,10 +297,10 @@ export class TitleScene extends Phaser.Scene {
   }
 
   // ── Staggered letter animation for title ──
-  _createAnimatedTitle(W, H) {
+  _createAnimatedTitle(W, H, s) {
     const titleBase = "BATTLEBRAINS";
-    const titleY = H / 2 - 55;
-    const letterSpacing = 42;
+    const titleY = H / 2 - Math.round(55 * s);
+    const letterSpacing = Math.max(20, Math.round(38 * s));
     const startX =
       W / 2 - (titleBase.length * letterSpacing) / 2 + letterSpacing / 2;
 
@@ -319,13 +322,13 @@ export class TitleScene extends Phaser.Scene {
     this.titleLetters = [];
     titleBase.split("").forEach((char, i) => {
       const letter = this.add
-        .text(startX + i * letterSpacing, titleY + 50, char, {
-          fontSize: "56px",
+        .text(startX + i * letterSpacing, titleY + Math.round(50 * s), char, {
+          fontSize: CONFIG.fs(this, 50),
           fontFamily: "Arial Rounded MT Bold, Arial Black, Impact, sans-serif",
           color: colors[i % colors.length],
           fontStyle: "bold",
           stroke: "#000000",
-          strokeThickness: 6,
+          strokeThickness: Math.max(3, Math.round(6 * s)),
         })
         .setOrigin(0.5)
         .setAlpha(0)
@@ -345,7 +348,7 @@ export class TitleScene extends Phaser.Scene {
       // Continuous subtle float
       this.tweens.add({
         targets: letter,
-        y: titleY - 4,
+        y: titleY - Math.round(4 * s),
         duration: 1200 + i * 100,
         delay: 1500 + i * 80,
         yoyo: true,
@@ -357,16 +360,16 @@ export class TitleScene extends Phaser.Scene {
     });
 
     // Underline swoosh
-    const lineY = titleY + 32;
+    const lineY = titleY + Math.round(32 * s);
     const swoosh = this.add.graphics();
     swoosh.setAlpha(0);
 
     this.time.delayedCall(1600, () => {
-      swoosh.lineStyle(3, 0xffd700, 0.8);
+      swoosh.lineStyle(Math.max(2, Math.round(3 * s)), 0xffd700, 0.8);
       swoosh.lineBetween(
-        startX - 20,
+        startX - Math.round(20 * s),
         lineY,
-        startX + titleBase.length * letterSpacing - 20,
+        startX + titleBase.length * letterSpacing - Math.round(20 * s),
         lineY,
       );
       this.tweens.add({
@@ -379,10 +382,10 @@ export class TitleScene extends Phaser.Scene {
   }
 
   // ── 3 orbiting game-mode icons ──
-  _createOrbitingIcons(W, H) {
+  _createOrbitingIcons(W, H, s) {
     const cx = W / 2;
-    const cy = H / 2 + 80;
-    const radius = 160;
+    const cy = H / 2 + Math.round(80 * s);
+    const radius = Math.round(140 * s);
     const icons = [
       { emoji: "⚡", label: "Tug-of-War", color: "#ff6b6b" },
       { emoji: "🚀", label: "Rocket Rush", color: "#74b9ff" },
@@ -398,17 +401,17 @@ export class TitleScene extends Phaser.Scene {
 
       // Icon circle background
       const bg = this.add
-        .circle(0, 0, 35, 0x1a1a3e, 0.9)
+        .circle(0, 0, Math.round(30 * s), 0x1a1a3e, 0.9)
         .setStrokeStyle(
           2,
           Phaser.Display.Color.HexStringToColor(icon.color).color,
         );
       const emoji = this.add
-        .text(0, -3, icon.emoji, { fontSize: "30px" })
+        .text(0, -3, icon.emoji, { fontSize: CONFIG.fs(this, 26) })
         .setOrigin(0.5);
       const label = this.add
-        .text(0, 28, icon.label, {
-          fontSize: "12px",
+        .text(0, Math.round(28 * s), icon.label, {
+          fontSize: CONFIG.fs(this, 12),
           fontFamily: "Arial, sans-serif",
           color: icon.color,
           fontStyle: "bold",
@@ -447,22 +450,30 @@ export class TitleScene extends Phaser.Scene {
   }
 
   // ── Feature badges with staggered pop-in ──
-  _createFeatureBadges(W, H) {
-    const badges = [
-      { text: "🎯 Live Quiz Battles", x: 180, y: H - 120 },
-      { text: "👥 Team vs Team", x: 460, y: H - 120 },
-      { text: "⚡ Power-Ups", x: 700, y: H - 120 },
-      { text: "🏆 3 Epic Modes", x: 970, y: H - 120 },
+  _createFeatureBadges(W, H, s) {
+    // Distribute badges evenly across the width
+    const badgeCount = W < 500 ? 2 : 4; // show fewer on tiny screens
+    const allBadges = [
+      { text: "🎯 Live Quiz Battles" },
+      { text: "👥 Team vs Team" },
+      { text: "⚡ Power-Ups" },
+      { text: "🏆 3 Epic Modes" },
     ];
+    const badgesToShow = allBadges.slice(0, badgeCount);
+    const badgeW = Math.min(Math.round(190 * s), (W - 40) / badgeCount - 10);
+    const totalBadgesW = badgeCount * (badgeW + 10);
+    const startX = (W - totalBadgesW) / 2 + badgeW / 2 + 5;
+    const badgeY = H - Math.round(110 * s);
 
-    badges.forEach((badge, i) => {
+    badgesToShow.forEach((badge, i) => {
+      const bx = startX + i * (badgeW + 10);
       const bg = this.add
-        .rectangle(badge.x, badge.y, 200, 36, 0x1a1a3e, 0.8)
+        .rectangle(bx, badgeY, badgeW, Math.round(34 * s), 0x1a1a3e, 0.8)
         .setStrokeStyle(1, 0x6c5ce7);
 
       const txt = this.add
-        .text(badge.x, badge.y, badge.text, {
-          fontSize: "14px",
+        .text(bx, badgeY, badge.text, {
+          fontSize: CONFIG.fs(this, 13),
           fontFamily: "Arial, sans-serif",
           color: "#ccccee",
           fontStyle: "bold",
@@ -485,7 +496,7 @@ export class TitleScene extends Phaser.Scene {
       // Gentle hover
       this.tweens.add({
         targets: [bg, txt],
-        y: badge.y - 3,
+        y: badgeY - Math.round(3 * s),
         duration: 2000 + i * 300,
         delay: 3500 + i * 200,
         yoyo: true,
@@ -496,11 +507,11 @@ export class TitleScene extends Phaser.Scene {
   }
 
   // ── Enter Arena button ──
-  _createEnterButton(W, H) {
-    const btnY = H - 80;
+  _createEnterButton(W, H, s) {
+    const btnY = H - Math.round(65 * s);
 
     // Glow behind button
-    const glow = this.add.circle(W / 2, btnY, 70, 0x6c5ce7, 0.13);
+    const glow = this.add.circle(W / 2, btnY, Math.round(60 * s), 0x6c5ce7, 0.13);
     this.tweens.add({
       targets: glow,
       scaleX: 1.3,
@@ -515,12 +526,12 @@ export class TitleScene extends Phaser.Scene {
     // Button (smaller, lower)
     const btn = this.add
       .text(W / 2, btnY, "🎮  ENTER THE ARENA  🎮", {
-        fontSize: "22px",
+        fontSize: CONFIG.fs(this, 20),
         fontFamily: "Arial Rounded MT Bold, Arial Black, sans-serif",
         fontStyle: "bold",
         color: "#ffffff",
         backgroundColor: "#6c5ce7",
-        padding: { x: 24, y: 10 },
+        padding: { x: Math.max(12, Math.round(22 * s)), y: Math.max(6, Math.round(10 * s)) },
         stroke: "#000000",
         strokeThickness: 2,
       })

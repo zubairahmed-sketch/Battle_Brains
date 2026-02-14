@@ -33,13 +33,14 @@ export class BootScene extends Phaser.Scene {
   _createProgressBar() {
     const w = this.scale.width;
     const h = this.scale.height;
-    const barW = 400;
-    const barH = 30;
+    const s = CONFIG.s(this);
+    const barW = Math.min(Math.round(400 * s), w - 40);
+    const barH = Math.max(16, Math.round(30 * s));
 
-    const bg = this.add.rectangle(w / 2, h / 2 + 50, barW, barH, 0x333333);
+    const bg = this.add.rectangle(w / 2, h / 2 + Math.round(50 * s), barW, barH, 0x333333);
     const fill = this.add.rectangle(
       w / 2 - barW / 2,
-      h / 2 + 50,
+      h / 2 + Math.round(50 * s),
       0,
       barH,
       CONFIG.COLORS.GOLD,
@@ -47,10 +48,16 @@ export class BootScene extends Phaser.Scene {
     fill.setOrigin(0, 0.5);
 
     const title = this.add
-      .text(w / 2, h / 2 - 60, "🧠 BattleBrains", CONFIG.FONT.TITLE)
+      .text(w / 2, h / 2 - Math.round(60 * s), "🧠 BattleBrains", {
+        ...CONFIG.FONT.TITLE,
+        fontSize: CONFIG.fs(this, 48),
+      })
       .setOrigin(0.5);
     const loadText = this.add
-      .text(w / 2, h / 2 + 100, "Generating arena...", CONFIG.FONT.SMALL)
+      .text(w / 2, h / 2 + Math.round(100 * s), "Generating arena...", {
+        ...CONFIG.FONT.SMALL,
+        fontSize: CONFIG.fs(this, 18),
+      })
       .setOrigin(0.5);
 
     this.load.on("progress", (val) => {

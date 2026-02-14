@@ -21,6 +21,7 @@ export class WinScene extends Phaser.Scene {
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
+    const s = CONFIG.s(this);
 
     // ── Background ──
     const winColor = this.winner === "red" ? 0x2d1515 : 0x15152d;
@@ -35,22 +36,22 @@ export class WinScene extends Phaser.Scene {
     const teamName = this.winner === "red" ? "RED TEAM" : "BLUE TEAM";
 
     this.add
-      .text(W / 2, 80, "🏆 VICTORY! 🏆", {
-        fontSize: "64px",
+      .text(W / 2, Math.round(80 * s), "🏆 VICTORY! 🏆", {
+        fontSize: CONFIG.fs(this, 58),
         color: "#ffd700",
         fontStyle: "bold",
         stroke: "#000",
-        strokeThickness: 6,
+        strokeThickness: Math.max(3, Math.round(6 * s)),
       })
       .setOrigin(0.5);
 
     const winnerText = this.add
-      .text(W / 2, 170, `${teamEmoji} ${teamName} WINS! ${teamEmoji}`, {
-        fontSize: "42px",
+      .text(W / 2, Math.round(160 * s), `${teamEmoji} ${teamName} WINS! ${teamEmoji}`, {
+        fontSize: CONFIG.fs(this, 38),
         color: teamColor,
         fontStyle: "bold",
         stroke: "#000",
-        strokeThickness: 4,
+        strokeThickness: Math.max(2, Math.round(4 * s)),
       })
       .setOrigin(0.5);
 
@@ -71,36 +72,38 @@ export class WinScene extends Phaser.Scene {
       "catapult-clash": "🏰 Catapult Castle Clash",
     };
     this.add
-      .text(W / 2, 230, modeLabels[this.mode] || this.mode, {
-        fontSize: "24px",
+      .text(W / 2, Math.round(220 * s), modeLabels[this.mode] || this.mode, {
+        fontSize: CONFIG.fs(this, 22),
         color: "#aaa",
       })
       .setOrigin(0.5);
 
     // ── Score summary ──
-    this._showScoreSummary(W, H);
+    this._showScoreSummary(W, H, s);
 
     // ── Rematch Button ──
     this._createButton(
       W / 2,
-      H - 140,
+      H - Math.round(130 * s),
       "🔄 QUICK REMATCH",
       CONFIG.COLORS.GREEN,
       () => {
         SocketManager.rematch();
       },
+      s,
     );
 
     // ── Back to Lobby ──
     this._createButton(
       W / 2,
-      H - 70,
+      H - Math.round(65 * s),
       "🏠 Back to Lobby",
       CONFIG.COLORS.PURPLE,
       () => {
         SocketManager.off("rematch-started");
         this.scene.start("LobbyScene");
       },
+      s,
     );
 
     // ── Listen for rematch ──
@@ -131,18 +134,20 @@ export class WinScene extends Phaser.Scene {
     this.cameras.main.shake(300, 0.01);
   }
 
-  _showScoreSummary(W, H) {
+  _showScoreSummary(W, H, s) {
     const scores = this.gameState.scores || { red: 0, blue: 0 };
-    const centerY = 310;
+    const centerY = Math.round(300 * s);
+    const panelW = Math.min(Math.round(500 * s), W - 30);
+    const panelH = Math.round(150 * s);
 
     // Panel
     this.add
-      .rectangle(W / 2, centerY + 30, 500, 150, 0x111122, 0.8)
+      .rectangle(W / 2, centerY + Math.round(30 * s), panelW, panelH, 0x111122, 0.8)
       .setStrokeStyle(2, 0x333366);
 
     this.add
-      .text(W / 2, centerY - 30, "📊 Final Scores", {
-        fontSize: "22px",
+      .text(W / 2, centerY - Math.round(30 * s), "📊 Final Scores", {
+        fontSize: CONFIG.fs(this, 22),
         color: "#ffd700",
         fontStyle: "bold",
       })
@@ -150,8 +155,8 @@ export class WinScene extends Phaser.Scene {
 
     // Red score
     this.add
-      .text(W / 2 - 100, centerY + 10, `🔴 Red: ${scores.red}`, {
-        fontSize: "28px",
+      .text(W / 2 - Math.round(90 * s), centerY + Math.round(10 * s), `🔴 Red: ${scores.red}`, {
+        fontSize: CONFIG.fs(this, 26),
         color: "#ff6b6b",
         fontStyle: "bold",
       })
@@ -159,8 +164,8 @@ export class WinScene extends Phaser.Scene {
 
     // Blue score
     this.add
-      .text(W / 2 + 100, centerY + 10, `🔵 Blue: ${scores.blue}`, {
-        fontSize: "28px",
+      .text(W / 2 + Math.round(90 * s), centerY + Math.round(10 * s), `🔵 Blue: ${scores.blue}`, {
+        fontSize: CONFIG.fs(this, 26),
         color: "#74b9ff",
         fontStyle: "bold",
       })
@@ -180,19 +185,21 @@ export class WinScene extends Phaser.Scene {
         break;
     }
     this.add
-      .text(W / 2, centerY + 55, statsText, {
-        fontSize: "16px",
+      .text(W / 2, centerY + Math.round(55 * s), statsText, {
+        fontSize: CONFIG.fs(this, 15),
         color: "#888",
       })
       .setOrigin(0.5);
 
     // Hint text
-    this.add
-      .text(W / 2, centerY + 90, "Press R for rematch  |  ESC for lobby", {
-        fontSize: "14px",
-        color: "#555",
-      })
-      .setOrigin(0.5);
+    if (W > 500) {
+      this.add
+        .text(W / 2, centerY + Math.round(85 * s), "Press R for rematch  |  ESC for lobby", {
+          fontSize: CONFIG.fs(this, 13),
+          color: "#555",
+        })
+        .setOrigin(0.5);
+    }
   }
 
   _createCelebration(W, H) {
@@ -237,15 +244,18 @@ export class WinScene extends Phaser.Scene {
     }
   }
 
-  _createButton(x, y, label, color, onClick) {
+  _createButton(x, y, label, color, onClick, s) {
+    s = s || CONFIG.s(this);
     const hex = "#" + color.toString(16).padStart(6, "0");
+    const padX = Math.max(12, Math.round(24 * s));
+    const padY = Math.max(8, Math.round(12 * s));
     const btn = this.add
       .text(x, y, label, {
-        fontSize: "26px",
+        fontSize: CONFIG.fs(this, 24),
         fontStyle: "bold",
         color: "#ffffff",
         backgroundColor: hex,
-        padding: { x: 24, y: 12 },
+        padding: { x: padX, y: padY },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });

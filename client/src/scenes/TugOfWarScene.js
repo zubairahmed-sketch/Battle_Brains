@@ -24,27 +24,28 @@ export class TugOfWarScene extends Phaser.Scene {
   create() {
     const W = this.scale.width;
     const H = this.scale.height;
+    const s = CONFIG.s(this);
 
     this.cameras.main.setBackgroundColor(0x1a3a2a);
 
     // ── Sky gradient background ──
-    this._drawBackground(W, H);
+    this._drawBackground(W, H, s);
 
     // ── Ground / grass ──
-    this.add.rectangle(W / 2, H - 40, W, 80, 0x2ecc71);
-    this.add.rectangle(W / 2, H - 5, W, 10, 0x27ae60);
+    this.add.rectangle(W / 2, H - Math.round(40 * s), W, Math.round(80 * s), 0x2ecc71);
+    this.add.rectangle(W / 2, H - Math.round(5 * s), W, Math.round(10 * s), 0x27ae60);
 
     // ── Mud pit (center) ──
     this.mudPit = this.add.ellipse(
       W / 2,
-      H - 100,
-      200,
-      50,
+      H - Math.round(100 * s),
+      Math.round(200 * s),
+      Math.round(50 * s),
       CONFIG.COLORS.MUD,
       0.8,
     );
     this.add
-      .text(W / 2, H - 100, "💩 MUD", { fontSize: "14px", color: "#fff" })
+      .text(W / 2, H - Math.round(100 * s), "💩 MUD", { fontSize: CONFIG.fs(this, 14), color: "#fff" })
       .setOrigin(0.5);
 
     // ── Center line ──
@@ -52,9 +53,10 @@ export class TugOfWarScene extends Phaser.Scene {
 
     // ── Rope system ──
     this.ropeSegments = [];
-    this.ropeY = H - 140;
+    this.ropeY = H - Math.round(140 * s);
     const segCount = 20;
-    const segWidth = 35;
+    this._segWidth = Math.max(8, Math.round(35 * s));
+    const segWidth = this._segWidth;
     const totalWidth = segCount * segWidth;
     const startX = (W - totalWidth) / 2;
 
@@ -63,64 +65,64 @@ export class TugOfWarScene extends Phaser.Scene {
       const color =
         i < segCount / 2 ? CONFIG.COLORS.RED_LIGHT : CONFIG.COLORS.BLUE_LIGHT;
       const seg = this.add
-        .rectangle(x, this.ropeY, segWidth - 2, 14, 0xc0915e)
-        .setStrokeStyle(2, 0x8b6914);
+        .rectangle(x, this.ropeY, segWidth - 2, Math.max(6, Math.round(14 * s)), 0xc0915e)
+        .setStrokeStyle(Math.max(1, Math.round(2 * s)), 0x8b6914);
       this.ropeSegments.push(seg);
     }
 
     // ── Rope knot (center marker) ──
     this.ropeKnot = this.add
-      .circle(W / 2, this.ropeY, 16, CONFIG.COLORS.GOLD)
-      .setStrokeStyle(3, 0xe67e22);
+      .circle(W / 2, this.ropeY, Math.max(8, Math.round(16 * s)), CONFIG.COLORS.GOLD)
+      .setStrokeStyle(Math.max(1, Math.round(3 * s)), 0xe67e22);
     this.knotLabel = this.add
-      .text(W / 2, this.ropeY - 30, "⚡", { fontSize: "24px" })
+      .text(W / 2, this.ropeY - Math.round(30 * s), "⚡", { fontSize: CONFIG.fs(this, 24) })
       .setOrigin(0.5);
 
     // ── Team characters (stick figures) ──
-    this.redTeamX = 100;
-    this.blueTeamX = W - 100;
+    this.redTeamX = Math.round(W * 0.08);
+    this.blueTeamX = W - Math.round(W * 0.08);
 
     this.redTeamGroup = this.add.container(this.redTeamX, this.ropeY);
     this.blueTeamGroup = this.add.container(this.blueTeamX, this.ropeY);
 
-    this._drawTeamCharacter(this.redTeamGroup, CONFIG.COLORS.RED, true);
-    this._drawTeamCharacter(this.blueTeamGroup, CONFIG.COLORS.BLUE, false);
+    this._drawTeamCharacter(this.redTeamGroup, CONFIG.COLORS.RED, true, s);
+    this._drawTeamCharacter(this.blueTeamGroup, CONFIG.COLORS.BLUE, false, s);
 
     // ── Team labels ──
-    this.add.text(120, 20, "🔴 RED TEAM", {
-      fontSize: "22px",
+    this.add.text(Math.round(16 * s), Math.round(20 * s), "🔴 RED TEAM", {
+      fontSize: CONFIG.fs(this, 20),
       color: "#ff6b6b",
       fontStyle: "bold",
     });
-    this.add.text(W - 250, 20, "🔵 BLUE TEAM", {
-      fontSize: "22px",
+    this.add.text(W - Math.round(16 * s), Math.round(20 * s), "🔵 BLUE TEAM", {
+      fontSize: CONFIG.fs(this, 20),
       color: "#74b9ff",
       fontStyle: "bold",
-    });
+    }).setOrigin(1, 0);
 
     // ── Rope position indicator ──
     this.posText = this.add
-      .text(W / 2, 55, "PULL!", {
-        fontSize: "20px",
+      .text(W / 2, Math.round(55 * s), "PULL!", {
+        fontSize: CONFIG.fs(this, 20),
         color: "#ffd700",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
 
     // ── Score display ──
-    this.redScoreText = this.add.text(120, 50, "Pulls: 0", {
-      fontSize: "18px",
+    this.redScoreText = this.add.text(Math.round(16 * s), Math.round(50 * s), "Pulls: 0", {
+      fontSize: CONFIG.fs(this, 16),
       color: "#ff6b6b",
     });
-    this.blueScoreText = this.add.text(W - 250, 50, "Pulls: 0", {
-      fontSize: "18px",
+    this.blueScoreText = this.add.text(W - Math.round(16 * s), Math.round(50 * s), "Pulls: 0", {
+      fontSize: CONFIG.fs(this, 16),
       color: "#74b9ff",
-    });
+    }).setOrigin(1, 0);
 
     // ── Timer ──
     this.timerText = this.add
-      .text(W / 2, 20, "⏰ 100", {
-        fontSize: "28px",
+      .text(W / 2, Math.round(20 * s), "⏰ 100", {
+        fontSize: CONFIG.fs(this, 26),
         color: "#ffd700",
         fontStyle: "bold",
       })
@@ -151,7 +153,7 @@ export class TugOfWarScene extends Phaser.Scene {
     });
 
     // ── Quit Game button (top-right corner) ──
-    this._createQuitButton(W);
+    this._createQuitButton(W, s);
 
     // ── Socket listeners ──
     this._setupListeners();
@@ -160,15 +162,16 @@ export class TugOfWarScene extends Phaser.Scene {
     this._setupKeyboard();
   }
 
-  _createQuitButton(W) {
-    const quitBtn = this.add.text(W - 16, 16, "✖ Quit Game", {
-      fontSize: "16px",
+  _createQuitButton(W, s) {
+    s = s || CONFIG.s(this);
+    const quitBtn = this.add.text(W - Math.round(16 * s), Math.round(16 * s), "✖ Quit Game", {
+      fontSize: CONFIG.fs(this, 14),
       fontFamily: "Arial Rounded MT Bold, Arial Black, sans-serif",
       color: "#ff6b6b",
       backgroundColor: "#1a1a2e",
-      padding: { x: 14, y: 8 },
+      padding: { x: Math.round(12 * s), y: Math.round(6 * s) },
       stroke: "#000",
-      strokeThickness: 2,
+      strokeThickness: Math.max(1, Math.round(2 * s)),
     })
       .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true })
@@ -192,24 +195,27 @@ export class TugOfWarScene extends Phaser.Scene {
     if (this._quitOverlay) return;
     const W = this.scale.width;
     const H = this.scale.height;
+    const s = CONFIG.s(this);
+    const panelW = Math.min(Math.round(420 * s), W - 20);
+    const panelH = Math.min(Math.round(200 * s), H - 20);
 
     // Dim background
     const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(400).setInteractive();
     // Panel
-    const panel = this.add.rectangle(W / 2, H / 2, 420, 200, 0x1a1a2e, 0.97).setStrokeStyle(3, 0xe74c3c).setDepth(401);
-    const shadow = this.add.rectangle(W / 2 + 6, H / 2 + 8, 420, 200, 0x000000, 0.3).setDepth(400);
-    const title = this.add.text(W / 2, H / 2 - 55, "⚠️  Quit Game?", {
-      fontSize: "28px", fontStyle: "bold", color: "#ffd700",
+    const panel = this.add.rectangle(W / 2, H / 2, panelW, panelH, 0x1a1a2e, 0.97).setStrokeStyle(Math.max(1, Math.round(3 * s)), 0xe74c3c).setDepth(401);
+    const shadow = this.add.rectangle(W / 2 + Math.round(6 * s), H / 2 + Math.round(8 * s), panelW, panelH, 0x000000, 0.3).setDepth(400);
+    const title = this.add.text(W / 2, H / 2 - Math.round(55 * s), "⚠️  Quit Game?", {
+      fontSize: CONFIG.fs(this, 26), fontStyle: "bold", color: "#ffd700",
       shadow: { offsetX: 0, offsetY: 2, color: "#000", blur: 8, fill: true },
     }).setOrigin(0.5).setDepth(402);
-    const msg = this.add.text(W / 2, H / 2 - 10, "You will leave the current match.", {
-      fontSize: "16px", color: "#ccc",
+    const msg = this.add.text(W / 2, H / 2 - Math.round(10 * s), "You will leave the current match.", {
+      fontSize: CONFIG.fs(this, 14), color: "#ccc",
     }).setOrigin(0.5).setDepth(402);
 
     // Yes button
-    const yesBtn = this.add.text(W / 2 - 80, H / 2 + 50, "Yes, Quit", {
-      fontSize: "18px", fontStyle: "bold", color: "#fff", backgroundColor: "#e74c3c",
-      padding: { x: 18, y: 8 }, stroke: "#000", strokeThickness: 2,
+    const yesBtn = this.add.text(W / 2 - Math.round(80 * s), H / 2 + Math.round(50 * s), "Yes, Quit", {
+      fontSize: CONFIG.fs(this, 16), fontStyle: "bold", color: "#fff", backgroundColor: "#e74c3c",
+      padding: { x: Math.round(16 * s), y: Math.round(7 * s) }, stroke: "#000", strokeThickness: Math.max(1, Math.round(2 * s)),
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(402);
     yesBtn.on("pointerover", () => yesBtn.setStyle({ backgroundColor: "#ff4444" }));
     yesBtn.on("pointerout", () => yesBtn.setStyle({ backgroundColor: "#e74c3c" }));
@@ -220,9 +226,9 @@ export class TugOfWarScene extends Phaser.Scene {
     });
 
     // Cancel button
-    const noBtn = this.add.text(W / 2 + 80, H / 2 + 50, "Cancel", {
-      fontSize: "18px", fontStyle: "bold", color: "#fff", backgroundColor: "#636e72",
-      padding: { x: 18, y: 8 }, stroke: "#000", strokeThickness: 2,
+    const noBtn = this.add.text(W / 2 + Math.round(80 * s), H / 2 + Math.round(50 * s), "Cancel", {
+      fontSize: CONFIG.fs(this, 16), fontStyle: "bold", color: "#fff", backgroundColor: "#636e72",
+      padding: { x: Math.round(16 * s), y: Math.round(7 * s) }, stroke: "#000", strokeThickness: Math.max(1, Math.round(2 * s)),
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(402);
     noBtn.on("pointerover", () => noBtn.setStyle({ backgroundColor: "#74b9ff" }));
     noBtn.on("pointerout", () => noBtn.setStyle({ backgroundColor: "#636e72" }));
@@ -235,18 +241,21 @@ export class TugOfWarScene extends Phaser.Scene {
   }
 
   // ── Background ──
-  _drawBackground(W, H) {
+  _drawBackground(W, H, s) {
+    s = s || CONFIG.s(this);
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x1a3a2a, 0x1a3a2a, 0x0a2a1a, 0x0a2a1a);
     bg.fillRect(0, 0, W, H);
 
     // Trees / decorations
-    for (let i = 0; i < 8; i++) {
-      const tx = 80 + i * 160;
+    const treeCount = Math.max(3, Math.min(8, Math.floor(W / 160)));
+    const treeSpacing = W / (treeCount + 1);
+    for (let i = 0; i < treeCount; i++) {
+      const tx = treeSpacing * (i + 1);
       this.add.circle(
         tx,
-        this.scale.height - 120,
-        25 + Math.random() * 15,
+        H - Math.round(120 * s),
+        Math.round((25 + Math.random() * 15) * s),
         0x228b22,
         0.5,
       );
@@ -254,23 +263,24 @@ export class TugOfWarScene extends Phaser.Scene {
   }
 
   // ── Team character (simple) ──
-  _drawTeamCharacter(container, color, faceRight) {
+  _drawTeamCharacter(container, color, faceRight, s) {
+    s = s || CONFIG.s(this);
     const dir = faceRight ? 1 : -1;
     // Body
-    container.add(this.add.circle(0, -20, 15, color));
-    container.add(this.add.rectangle(0, 10, 10, 30, color));
+    container.add(this.add.circle(0, Math.round(-20 * s), Math.round(15 * s), color));
+    container.add(this.add.rectangle(0, Math.round(10 * s), Math.round(10 * s), Math.round(30 * s), color));
     // Arms pulling rope
     container.add(
-      this.add.line(0, 0, 0, 0, dir * 30, -5, color, 1).setLineWidth(3),
+      this.add.line(0, 0, 0, 0, dir * Math.round(30 * s), Math.round(-5 * s), color, 1).setLineWidth(Math.max(1, Math.round(3 * s))),
     );
     container.add(
-      this.add.line(0, 0, 0, 10, dir * 30, 5, color, 1).setLineWidth(3),
+      this.add.line(0, 0, 0, Math.round(10 * s), dir * Math.round(30 * s), Math.round(5 * s), color, 1).setLineWidth(Math.max(1, Math.round(3 * s))),
     );
     // Legs
     container.add(
-      this.add.line(0, 0, 0, 25, -10, 45, color, 1).setLineWidth(3),
+      this.add.line(0, 0, 0, Math.round(25 * s), Math.round(-10 * s), Math.round(45 * s), color, 1).setLineWidth(Math.max(1, Math.round(3 * s))),
     );
-    container.add(this.add.line(0, 0, 0, 25, 10, 45, color, 1).setLineWidth(3));
+    container.add(this.add.line(0, 0, 0, Math.round(25 * s), Math.round(10 * s), Math.round(45 * s), color, 1).setLineWidth(Math.max(1, Math.round(3 * s))));
   }
 
   // ── Socket Listeners ──
@@ -366,21 +376,24 @@ export class TugOfWarScene extends Phaser.Scene {
     this._opponentLeftShown = true;
     const W = this.scale.width;
     const H = this.scale.height;
+    const s = CONFIG.s(this);
+    const panelW = Math.min(Math.round(480 * s), W - 20);
+    const panelH = Math.min(Math.round(220 * s), H - 20);
 
     const dim = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.75).setDepth(500).setInteractive();
-    const panel = this.add.rectangle(W / 2, H / 2, 480, 220, 0x1a1a2e, 0.97).setStrokeStyle(3, 0xffd700).setDepth(501);
-    const shadow = this.add.rectangle(W / 2 + 6, H / 2 + 8, 480, 220, 0x000000, 0.3).setDepth(500);
-    const icon = this.add.text(W / 2, H / 2 - 60, "🚪", { fontSize: "48px" }).setOrigin(0.5).setDepth(502);
-    const title = this.add.text(W / 2, H / 2 - 15, "Opponent Left!", {
-      fontSize: "28px", fontStyle: "bold", color: "#ffd700",
+    const panel = this.add.rectangle(W / 2, H / 2, panelW, panelH, 0x1a1a2e, 0.97).setStrokeStyle(Math.max(1, Math.round(3 * s)), 0xffd700).setDepth(501);
+    const shadow = this.add.rectangle(W / 2 + Math.round(6 * s), H / 2 + Math.round(8 * s), panelW, panelH, 0x000000, 0.3).setDepth(500);
+    const icon = this.add.text(W / 2, H / 2 - Math.round(60 * s), "🚪", { fontSize: CONFIG.fs(this, 42) }).setOrigin(0.5).setDepth(502);
+    const title = this.add.text(W / 2, H / 2 - Math.round(15 * s), "Opponent Left!", {
+      fontSize: CONFIG.fs(this, 26), fontStyle: "bold", color: "#ffd700",
       shadow: { offsetX: 0, offsetY: 2, color: "#000", blur: 8, fill: true },
     }).setOrigin(0.5).setDepth(502);
-    const msg = this.add.text(W / 2, H / 2 + 25, message, {
-      fontSize: "16px", color: "#ccc",
+    const msg = this.add.text(W / 2, H / 2 + Math.round(25 * s), message, {
+      fontSize: CONFIG.fs(this, 14), color: "#ccc",
     }).setOrigin(0.5).setDepth(502);
-    const okBtn = this.add.text(W / 2, H / 2 + 70, "Back to Lobby", {
-      fontSize: "20px", fontStyle: "bold", color: "#fff", backgroundColor: "#6c5ce7",
-      padding: { x: 24, y: 10 }, stroke: "#000", strokeThickness: 2,
+    const okBtn = this.add.text(W / 2, H / 2 + Math.round(70 * s), "Back to Lobby", {
+      fontSize: CONFIG.fs(this, 18), fontStyle: "bold", color: "#fff", backgroundColor: "#6c5ce7",
+      padding: { x: Math.round(20 * s), y: Math.round(8 * s) }, stroke: "#000", strokeThickness: Math.max(1, Math.round(2 * s)),
     }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(502);
     okBtn.on("pointerover", () => okBtn.setStyle({ backgroundColor: "#a29bfe" }));
     okBtn.on("pointerout", () => okBtn.setStyle({ backgroundColor: "#6c5ce7" }));
@@ -465,7 +478,8 @@ export class TugOfWarScene extends Phaser.Scene {
   _updateRope() {
     if (!this.gameState) return;
     const pos = this.gameState.ropePosition || 0;
-    const maxShift = 300; // max pixel shift
+    const s = CONFIG.s(this);
+    const maxShift = Math.round(300 * s); // max pixel shift — proportional
     const normalizedPos = (pos / this.gameState.mudThreshold) * maxShift;
 
     // Move knot
@@ -474,7 +488,7 @@ export class TugOfWarScene extends Phaser.Scene {
 
     // Shift rope segments
     const segCount = this.ropeSegments.length;
-    const segWidth = 35;
+    const segWidth = this._segWidth || Math.max(8, Math.round(35 * s));
     const totalWidth = segCount * segWidth;
     const startX = (this.scale.width - totalWidth) / 2 + normalizedPos;
 
@@ -531,7 +545,7 @@ export class TugOfWarScene extends Phaser.Scene {
     const freeze = this.add.rectangle(x, H / 2, W / 2, H, 0x00cec9, 0.3);
     const txt = this.add
       .text(x, H / 2, "❄️ FROZEN!", {
-        fontSize: "48px",
+        fontSize: CONFIG.fs(this, 42),
         color: "#00cec9",
         fontStyle: "bold",
       })

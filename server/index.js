@@ -54,7 +54,11 @@ io.on("connection", (socket) => {
 
   // ── Create Room ──
   socket.on("create-room", ({ playerName, mode }, callback) => {
-    const code = generateRoomCode();
+    let code = generateRoomCode();
+    // Ensure no collision with existing room codes
+    while (rooms.has(code)) {
+      code = generateRoomCode();
+    }
     const room = new GameRoom(code, mode, io);
     rooms.set(code, room);
 
@@ -108,7 +112,7 @@ io.on("connection", (socket) => {
   // ── Start Game ──
   socket.on("start-game", ({ roomCode }) => {
     const room = rooms.get(roomCode);
-    if (!room) return;
+    if (!room || room.status !== "waiting") return;
 
     room.startGame();
     room.resetCorrectThisRound();
@@ -235,7 +239,7 @@ io.on("connection", (socket) => {
   // ── Use Power-Up ──
   socket.on("use-powerup", ({ roomCode, powerUpType }) => {
     const room = rooms.get(roomCode);
-    if (!room) return;
+    if (!room || room.status !== "playing") return;
 
     const result = room.usePowerUp(socket.id, powerUpType);
     if (result.success) {
@@ -245,6 +249,14 @@ io.on("connection", (socket) => {
         state: room.getState(),
         effect: result.effect,
       });
+
+      // Check if power-up caused a win (e.g., double shot killed a castle)
+      if (room.checkWinCondition()) {
+        room.stopTimer();
+        room.status = "finished";
+        const winner = room.getWinner();
+        io.to(roomCode).emit("game-over", { winner, state: room.getState() });
+      }
     } else {
       socket.emit("powerup-failed", { reason: result.reason });
     }
@@ -268,11 +280,26 @@ io.on("connection", (socket) => {
   socket.on("rematch", ({ roomCode }) => {
     const room = rooms.get(roomCode);
     if (!room) return;
+    room.stopTimer();
     room.reset();
+    room.resetCorrectThisRound();
     io.to(roomCode).emit("rematch-started", {
       state: room.getState(),
       question: room.getCurrentQuestion(),
     });
+
+    // Restart the game timer for the rematch
+    room.startGameTimer(
+      (timeLeft) => {
+        io.to(roomCode).emit("timer-tick", { timeLeft });
+      },
+      () => {
+        if (room.status !== "playing") return;
+        room.status = "finished";
+        const winner = room.getWinner();
+        io.to(roomCode).emit("game-over", { winner, state: room.getState() });
+      },
+    );
   });
 
   // ── Disconnect ──

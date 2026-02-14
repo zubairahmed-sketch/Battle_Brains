@@ -98,6 +98,7 @@ export class WinScene extends Phaser.Scene {
       "🏠 Back to Lobby",
       CONFIG.COLORS.PURPLE,
       () => {
+        SocketManager.off("rematch-started");
         this.scene.start("LobbyScene");
       },
     );
@@ -122,6 +123,7 @@ export class WinScene extends Phaser.Scene {
       SocketManager.rematch();
     });
     this.input.keyboard.on("keydown-ESC", () => {
+      SocketManager.off("rematch-started");
       this.scene.start("LobbyScene");
     });
 

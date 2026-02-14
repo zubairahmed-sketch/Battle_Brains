@@ -16,8 +16,18 @@ class SocketManagerClass {
 
   connect() {
     if (this.socket && this.socket.connected) return;
+    
+    // Disconnect old socket if exists but not connected
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    
     this.socket = io(CONFIG.SERVER_URL, {
       transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
     });
 
     this.socket.on("connect", () => {
@@ -26,6 +36,10 @@ class SocketManagerClass {
 
     this.socket.on("disconnect", () => {
       console.log("💔 Disconnected from server");
+    });
+
+    this.socket.on("connect_error", (err) => {
+      console.log("⚠️ Connection error:", err.message);
     });
   }
 

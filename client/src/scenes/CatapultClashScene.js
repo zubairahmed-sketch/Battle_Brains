@@ -263,7 +263,6 @@ export class CatapultClashScene extends Phaser.Scene {
 
   // ── Boulder launch animation ──
   _launchBoulder(attackerTeam) {
-    const W = this.scale.width;
     const H = this.scale.height;
     const startX =
       attackerTeam === "red" ? this.redCastleX + 130 : this.blueCastleX - 130;
@@ -347,6 +346,9 @@ export class CatapultClashScene extends Phaser.Scene {
       if (data.lastAction && data.lastAction.type === "hit") {
         this._launchBoulder(data.team);
       }
+      if (data.lastAction && data.lastAction.type === "shielded") {
+        this.hud.showFloatingText(`🛡️ ${data.lastAction.description}`, CONFIG.COLORS.PURPLE);
+      }
     });
 
     SocketManager.on("answer-result", (data) => {
@@ -364,8 +366,9 @@ export class CatapultClashScene extends Phaser.Scene {
       }
     });
 
-    SocketManager.on("answer-rejected", () => {
-      this.hud.showFloatingText("Already answered!", CONFIG.COLORS.GRAY);
+    SocketManager.on("answer-rejected", (data) => {
+      const msg = data?.reason || "Already answered!";
+      this.hud.showFloatingText(msg, CONFIG.COLORS.GRAY);
     });
 
     SocketManager.on("new-question", (data) => {
@@ -425,10 +428,24 @@ export class CatapultClashScene extends Phaser.Scene {
   _setupKeyboard() {
     const redKeys = CONFIG.KEYS.RED.ANSWER;
     const blueKeys = CONFIG.KEYS.BLUE.ANSWER;
+    const numberKeys = ["1", "2", "3", "4"]; // multi-device: submits for YOUR team
     this.teamAnswered = { red: false, blue: false };
 
     this.input.keyboard.on("keydown", (event) => {
       const key = event.key.toUpperCase();
+
+      // Number keys 1-4: submit for YOUR assigned team (multi-device mode)
+      const numIdx = numberKeys.indexOf(event.key);
+      if (numIdx !== -1) {
+        const myTeam = SocketManager.team || "red";
+        if (!this.teamAnswered[myTeam]) {
+          this.teamAnswered[myTeam] = true;
+          SocketManager.submitAnswer(numIdx, myTeam);
+          this.questionOverlay.highlightOption(numIdx, myTeam);
+        }
+        return;
+      }
+
       const redIdx = redKeys.indexOf(key);
       if (redIdx !== -1 && !this.teamAnswered.red) {
         this.teamAnswered.red = true;

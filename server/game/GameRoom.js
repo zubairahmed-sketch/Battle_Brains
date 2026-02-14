@@ -227,6 +227,27 @@ class GameRoom {
     // Use provided team (for single-device mode) or player's own team
     const answeringTeam = team || player.team;
 
+    // In multi-device mode, only allow answering for your own team
+    // (unless single-device: only 1 player in the room controlling both teams)
+    if (this.players.size > 1 && answeringTeam !== player.team) {
+      return {
+        correct: false,
+        action: null,
+        rejected: true,
+        reason: "Cannot answer for the other team",
+      };
+    }
+
+    // Check if team is frozen (freeze power-up)
+    if (this.state[`${answeringTeam}Frozen`] && Date.now() < (this.state[`${answeringTeam}FreezeEnd`] || 0)) {
+      return {
+        correct: false,
+        action: null,
+        rejected: true,
+        reason: "Your team is FROZEN! Wait it out...",
+      };
+    }
+
     // Prevent same team from answering twice per round
     if (this.answeredThisRound.has(answeringTeam)) {
       return {
@@ -272,6 +293,14 @@ class GameRoom {
   }
 
   _applyCorrectAnswer(team) {
+    const enemy = team === "red" ? "blue" : "red";
+
+    // Check if enemy has an active shield — if so, consume it and block the effect
+    if (this.state[`${enemy}Shield`]) {
+      this.state[`${enemy}Shield`] = false;
+      return { type: "shielded", team, description: `${enemy} team's SHIELD blocked the attack!` };
+    }
+
     switch (this.mode) {
       case "tug-of-war": {
         const pull = this.state.pullStrength;

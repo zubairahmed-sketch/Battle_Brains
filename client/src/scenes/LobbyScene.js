@@ -17,6 +17,9 @@ export class LobbyScene extends Phaser.Scene {
     const W = this.scale.width;
     const H = this.scale.height;
 
+    // ── Clean up any stale socket listeners from previous sessions ──
+    this._cleanupLobbyListeners();
+
     // ── State ──
     this.selectedMode = "tug-of-war";
     this.playerName = "Player" + Math.floor(Math.random() * 999);
@@ -39,6 +42,17 @@ export class LobbyScene extends Phaser.Scene {
     // ── Room Action Buttons ──
     this._createRoomActions(W);
 
+    // ── Status text for errors (visible on main screen) ──
+    this.statusText = this.add.text(W / 2, 560, "", {
+      fontSize: "16px",
+      fontFamily: "Arial, sans-serif",
+      color: "#ff6b6b",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(60);
+
+    // ── Connection status ──
+    this._checkConnection();
+
     // ── Waiting Room Panel (hidden initially) ──
     this._createWaitingPanel(W, H);
 
@@ -56,6 +70,41 @@ export class LobbyScene extends Phaser.Scene {
 
     // ── Entry animation — fade in from black ──
     this.cameras.main.fadeIn(400, 0, 0, 0);
+  }
+
+  _cleanupLobbyListeners() {
+    SocketManager.off("player-joined");
+    SocketManager.off("player-left");
+    SocketManager.off("teams-updated");
+    SocketManager.off("game-started");
+  }
+
+  _checkConnection() {
+    if (!SocketManager.socket || !SocketManager.socket.connected) {
+      // Try reconnecting
+      SocketManager.connect();
+      this.statusText.setText("⏳ Connecting to server...").setColor("#ffd700");
+      // Wait for connection
+      const checkInterval = this.time.addEvent({
+        delay: 500,
+        repeat: 20,
+        callback: () => {
+          if (SocketManager.socket?.connected) {
+            this.statusText.setText("✅ Connected!").setColor("#2ecc71");
+            this.time.delayedCall(2000, () => {
+              if (this.statusText) this.statusText.setText("");
+            });
+            checkInterval.destroy();
+          }
+        },
+      });
+      // Timeout after 10 seconds
+      this.time.delayedCall(10000, () => {
+        if (!SocketManager.socket?.connected) {
+          this.statusText.setText("❌ Cannot connect to server. Is it running?").setColor("#e74c3c");
+        }
+      });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -1004,7 +1053,7 @@ export class LobbyScene extends Phaser.Scene {
       .text(
         W / 2,
         footerY,
-        "🔴 RED: Q W E R    |    🔵 BLUE: U I O P    |    📱 Touch: Tap answers!",
+        "🔴 RED: Q W E R    |    🔵 BLUE: U I O P    |    🎯 Multi-device: 1 2 3 4",
         {
           fontSize: "13px",
           fontFamily: "Arial, sans-serif",
@@ -1083,6 +1132,8 @@ export class LobbyScene extends Phaser.Scene {
         "rocket-rush": "RocketRushScene",
         "catapult-clash": "CatapultClashScene",
       };
+      // Clean up lobby listeners before transitioning
+      this._cleanupLobbyListeners();
       // Flash transition
       this.cameras.main.flash(300, 255, 255, 255);
       this.time.delayedCall(200, () => {
@@ -1114,12 +1165,18 @@ export class LobbyScene extends Phaser.Scene {
   // ═══════════════════════════════════════════════════════════
 
   async _createRoom() {
+    if (!SocketManager.socket?.connected) {
+      this.statusText.setText("❌ Not connected to server!").setColor("#e74c3c");
+      return;
+    }
+    this.statusText.setText("⏳ Creating room...").setColor("#ffd700");
     try {
       const res = await SocketManager.createRoom(
         this.playerName,
         this.selectedMode,
       );
       this.inRoom = true;
+      this.statusText.setText("");
       this._showWaitingPanel(res.roomCode);
       this.redTeamText.setText(`⚔️ ${this.playerName}`);
       this.blueTeamText.setText("(waiting...)");
@@ -1127,20 +1184,28 @@ export class LobbyScene extends Phaser.Scene {
       this.roomCodeText.setText(res.roomCode);
     } catch (err) {
       console.error("Create room failed:", err);
+      this.statusText.setText("❌ Failed to create room: " + err).setColor("#e74c3c");
     }
   }
 
   async _joinRoom() {
-    if (this.roomInput.length < 4) return;
+    if (this.roomInput.length < 4) {
+      this.statusText.setText("❌ Room code must be at least 4 characters").setColor("#e74c3c");
+      return;
+    }
+    if (!SocketManager.socket?.connected) {
+      this.statusText.setText("❌ Not connected to server!").setColor("#e74c3c");
+      return;
+    }
+    this.statusText.setText("⏳ Joining room...").setColor("#ffd700");
     try {
       const res = await SocketManager.joinRoom(this.roomInput, this.playerName);
       this.inRoom = true;
+      this.statusText.setText("");
       this._showWaitingPanel(res.roomCode);
     } catch (err) {
       console.error("Join room failed:", err);
-      if (this.waitingStatus) {
-        this.waitingStatus.setText("❌ " + err);
-      }
+      this.statusText.setText("❌ " + err).setColor("#e74c3c");
     }
   }
 
